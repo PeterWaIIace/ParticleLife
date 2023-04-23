@@ -55,9 +55,12 @@ class Particle
         {
             Vector2 forceVector = Vector2Subtract(this->position,otherPostion);
             float distance = Vector2Distance(this->position,otherPostion);
-            forceVector = Vector2Scale(forceVector,1/(distance));
-            // std::cout << "forceVector: " << forceVector.x << " " << forceVector.y << std::endl;
-            this->force = Vector2Add(this->force,Vector2Scale(forceVector,relation));
+            if(abs(distance) > 10 && abs(distance) < 100)
+            {
+                forceVector = Vector2Scale(forceVector,1/(distance*distance));
+                // std::cout << "forceVector: " << forceVector.x << " " << forceVector.y << std::endl;
+                this->force = Vector2Add(this->force,Vector2Scale(forceVector,relation));
+            }
         }
 
         void updatePostion()
@@ -87,7 +90,7 @@ class Particle
 
         Vector2 getPostion()
         {
-            std::cout << "this->position: " << this->position.x << " " << this->position.y << std::endl;
+            // std::cout << "this->position: " << this->position.x << " " << this->position.y << std::endl;
             return this->position;
         }
 
@@ -112,7 +115,7 @@ class Particle
 class relationMatrix
 {
     private:
-        int arr[MAX_COLORS][MAX_COLORS];
+        float arr[MAX_COLORS][MAX_COLORS];
 
         std::random_device rd_;
         std::mt19937 gen_;
@@ -130,12 +133,12 @@ class relationMatrix
             {
                 for(int j = 0 ; j < MAX_COLORS ; j++)
                 {
-                    arr[i][j] = this->getRandomInt(-10,10);
+                    arr[i][j] = (float)this->getRandomInt(-10,10)/1.00;
                 }
             }
         }
 
-        int getRelation(int firstColor,int secondColor)
+        float getRelation(int firstColor,int secondColor)
         {
             return arr[firstColor][secondColor];
         }
@@ -146,16 +149,16 @@ class relationMatrix
 class ParticleUniverse
 {
     public:
-        ParticleUniverse(int nParticles) : rd_{}, gen_{rd_()}, dist_(1,100)
+        ParticleUniverse(int nParticles, int width, int height) : rd_{}, gen_{rd_()}, dist_(1,100)
         {
             for(int i = 0 ; i < nParticles ; i++)
             {
                 this->particles.push_back(Particle(
-                    this->getRandomInt(100,1000), // X
-                    this->getRandomInt(100,1000),  // Y
+                    this->getRandomInt(0,width), // X
+                    this->getRandomInt(0,height),  // Y
                     this->getRandomInt(0,MAX_COLORS),  // COLOR
-                    1000,
-                    1000
+                    width,
+                    height
                 ));
             }
         }
@@ -204,9 +207,9 @@ int main(void)
 
     InitWindow(1200, 1200, "raylib [core] example - basic window");
 
-    SetTargetFPS(30);               // Set our game to run at 60 frames-per-second
+    SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
-    ParticleUniverse ParticleUniverse(2);
+    ParticleUniverse ParticleUniverse(1000,1200,1200);
 
     std::cout << "ParticleUniverse generated" << std::endl;
 
@@ -215,12 +218,12 @@ int main(void)
     {
 
         BeginDrawing();
-        ClearBackground(RAYWHITE);
+        ClearBackground(BLACK);
 
         std::vector<Particle> particles = ParticleUniverse.step();
         for(auto &particle : particles)
         {
-            DrawCircleV(particle.getPostion(),10,allColors[particle.color]);
+            DrawCircleV(particle.getPostion(),1,Fade(allColors[particle.color],0.5));
         }
 
         EndDrawing();
