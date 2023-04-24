@@ -8,16 +8,16 @@
 #define MAX_COLORS 2
 
 Color allColors[] = {
+    BLUE       ,     // Blue
+    GREEN      ,      // Green
     YELLOW     ,     // Yellow
     GOLD       ,     // Gold
     ORANGE     ,     // Orange
     PINK       ,   // Pink
     RED        ,     // Red
-    GREEN      ,      // Green
     LIME       ,      // Lime
     DARKGREEN  ,      // Dark Green
     SKYBLUE    ,   // Sky Blue
-    BLUE       ,     // Blue
     DARKBLUE   ,      // Dark Blue
     PURPLE     ,   // Purple
     VIOLET     ,    // Violet
@@ -33,7 +33,7 @@ Color allColors[] = {
 class Particle
 {
     public:
-        Particle(int x, int y, int color, int x_limit, int y_limit)
+        Particle(int x, int y, int color)
         {
             this->rMax = 0.5;
             this->color = color;
@@ -147,7 +147,7 @@ class Particle
 class relationMatrix
 {
     private:
-        float arr[MAX_COLORS][MAX_COLORS];
+        float arr[MAX_COLORS][MAX_COLORS] = {{1.0,1.0},{1.0,1.0}};
 
         std::random_device rd_;
         std::mt19937 gen_;
@@ -161,38 +161,12 @@ class relationMatrix
     public:
         relationMatrix() : rd_{}, gen_{rd_()}, dist_(1,100)
         {
-            for(int i = 0 ; i < MAX_COLORS ; i++)
-            {
-                for(int j = 0 ; j < MAX_COLORS ; j++)
-                {
-                    arr[i][j] = (float)this->getRandomInt(-1,1);
-                    if (i == j)
-                    {
-                        arr[i][j] = 1.0;
-                    }
-
-                    else if (i+1 == j)
-                    {
-                        arr[i][j] = 0.5;
-                    }
-                    else
-                    {
-                        arr[i][j] = 0.0;
-                    }
-
-                    std::cout << arr[i][j] << " ";
-                }
-                std::cout << std::endl;;
-            }
         }
 
         float getRelation(int firstColor,int secondColor)
         {
-            std::cout << "getRelation: " << arr[firstColor][secondColor] << std::endl;
             return arr[firstColor][secondColor];
         }
-
-
 };
 
 class ParticleUniverse
@@ -208,9 +182,7 @@ class ParticleUniverse
                 this->particles.push_back(Particle(
                     this->getRandomInt(this->width/4,this->width-this->width/4), // X
                     this->getRandomInt(this->height/4,this->height-this->height/4),  // Y
-                    this->getRandomInt(0,MAX_COLORS),  // COLOR
-                    width,
-                    height
+                    this->getRandomInt(0,MAX_COLORS-1)  // COLOR
                 ));
             }
 
@@ -286,14 +258,14 @@ int main(void)
 {
     std::cout << "starting" << std::endl;
 
-    int width = 100;
-    int height = 100;
+    int width  = 1000;
+    int height = 1000;
 
     InitWindow(width, height, "raylib [core] example - basic window");
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
-    ParticleUniverse ParticleUniverse(2,width, height);
+    ParticleUniverse ParticleUniverse(100,width, height);
 
     std::cout << "ParticleUniverse generated" << std::endl;
 
@@ -307,7 +279,10 @@ int main(void)
         std::vector<Particle> particles = ParticleUniverse.step();
         for(auto &particle : particles)
         {
-            DrawCircleGradient(particle.getPostion().x,particle.getPostion().y,10,Fade(allColors[particle.color],1),Fade(allColors[particle.color],0.0));
+            std::cout << particle.getPostion().x << " " << particle.getPostion().y << std::endl;
+            float x = particle.getPostion().x*width;
+            float y = particle.getPostion().y*height;
+            DrawCircleGradient(x,y,10,Fade(allColors[particle.color],1),Fade(allColors[particle.color],0.0));
         }
 
         EndDrawing();
