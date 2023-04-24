@@ -5,18 +5,14 @@
 #include <random>
 #include <iostream>
 
-#define MAX_COLORS 24
+#define MAX_COLORS 20
 
 Color allColors[] = {
-    LIGHTGRAY  ,   // Light Gray
-    GRAY       ,   // Gray
-    DARKGRAY   ,      // Dark Gray
     YELLOW     ,     // Yellow
     GOLD       ,     // Gold
     ORANGE     ,     // Orange
     PINK       ,   // Pink
     RED        ,     // Red
-    MAROON     ,     // Maroon
     GREEN      ,      // Green
     LIME       ,      // Lime
     DARKGREEN  ,      // Dark Green
@@ -44,28 +40,53 @@ class Particle
             this->position = { (float)x, (float)y };
             this->y_limit = y_limit;
             this->x_limit = x_limit;
-        }
-
-        void resetForces()
-        {
-            this->force = {0.0,0.0};
+            this->velocity = {0.0,0.0};
         }
 
         void addForce(Vector2 otherPostion, float relation)
         {
-            Vector2 forceVector = Vector2Subtract(this->position,otherPostion);
-            float distance = Vector2Distance(this->position,otherPostion);
-            if(abs(distance) > 10 && abs(distance) < 100)
+            Vector2 diffV  = Vector2Subtract(this->position,otherPostion);
+            float r = Vector2Distance(this->position,otherPostion);
+            float rMax = 100.0;
+
+            if(r > 0 && r < rMax)
             {
-                forceVector = Vector2Scale(forceVector,1/(distance*distance));
-                // std::cout << "forceVector: " << forceVector.x << " " << forceVector.y << std::endl;
-                this->force = Vector2Add(this->force,Vector2Scale(forceVector,relation));
+                float f = F(r/rMax,relation);
+                this->velocity.x = (diffV.x/abs(r))*f;
+                this->velocity.y = (diffV.y/abs(r))*f;
             }
         }
 
-        void updatePostion()
+        double F(float distance,float a)
         {
-            this->position = Vector2Subtract(this->position,this->force);
+            float beta = 0.3;
+            float max = 1.0;
+            if(distance < beta)
+            {
+                return distance/(beta-1);
+            }
+            else if(distance > beta)
+            {
+                return a * (1 - abs(2 * distance - 1 - beta)/(1 - beta));
+            }
+            else
+            {
+                return 0.0;
+            }
+        }
+
+        void updatePostion(float dt)
+        {
+            this->velocity.x *= 100.0;
+            this->velocity.y *= 100.0;
+
+            float friction = 0.4;
+            this->velocity.x *= friction;
+            this->velocity.y *= friction;
+
+            this->position.x += this->velocity.x * dt;
+            this->position.y += this->velocity.y * dt;
+            // std::cout << this->position.x << " " << this->position.y << std::endl;
 
             if(this->position.x > x_limit)
             {
@@ -90,7 +111,6 @@ class Particle
 
         Vector2 getPostion()
         {
-            // std::cout << "this->position: " << this->position.x << " " << this->position.y << std::endl;
             return this->position;
         }
 
@@ -108,7 +128,7 @@ class Particle
         int y_limit = 1000;
         int x_limit = 1000;
         Vector2 position;
-        Vector2 force;
+        Vector2 velocity;
 
 };
 
@@ -133,7 +153,7 @@ class relationMatrix
             {
                 for(int j = 0 ; j < MAX_COLORS ; j++)
                 {
-                    arr[i][j] = (float)this->getRandomInt(-10,10)/1.00;
+                    arr[i][j] = (float)this->getRandomInt(-1,1)/1.0;
                 }
             }
         }
@@ -151,23 +171,27 @@ class ParticleUniverse
     public:
         ParticleUniverse(int nParticles, int width, int height) : rd_{}, gen_{rd_()}, dist_(1,100)
         {
+            this->width = width;
+            this->height = height;
+
             for(int i = 0 ; i < nParticles ; i++)
             {
                 this->particles.push_back(Particle(
-                    this->getRandomInt(0,width), // X
-                    this->getRandomInt(0,height),  // Y
+                    this->getRandomInt(this->width/4,this->width-this->width/4), // X
+                    this->getRandomInt(this->height/4,this->height-this->height/4),  // Y
                     this->getRandomInt(0,MAX_COLORS),  // COLOR
                     width,
                     height
                 ));
             }
-        }
+
+            initSpatialMap();
+        };
 
         std::vector<Particle> step()
         {
             for(auto &particle1 : this->particles)
             {
-                particle1.resetForces();
                 for(auto &particle2 : this->particles)
                 {
                     if(particle1 != particle2)
@@ -179,7 +203,7 @@ class ParticleUniverse
 
             for(auto &particle : this->particles)
             {
-                particle.updatePostion();
+                particle.updatePostion(0.1); // some random 0.1
             }
             return particles;
         }
@@ -191,6 +215,33 @@ class ParticleUniverse
             dist_.param(std::uniform_int_distribution<>::param_type{min, max});
             return dist_(gen_);
         }
+
+        void initSpatialMap()
+        {
+            this->cellWidth  = this->width/this->quantization;
+            this->cellHeight = this->height/this->quantization;
+
+            for(auto &particle1 : this->particles)
+            {
+                Vector2 keys = getSpatialPosition(particle1.getPostion());
+                spatialMap[(int)(keys.x)][(int)(keys.y)].push_back(particle1);
+            }
+        }
+
+        Vector2 getSpatialPosition(Vector2 position)
+        {
+            int xKey = (int)(std::ceil((double)position.x/this->cellWidth));
+            int yKey = (int)(std::ceil((double)position.y/this->cellHeight));
+            Vector2 hashKeys = {xKey,yKey};
+            return hashKeys;
+        }
+
+        std::map<int,std::map<int,std::vector<Particle>>> spatialMap;
+        int quantization = 2;
+        int height = 0;
+        int width = 0;
+        int cellWidth = 0;
+        int cellHeight = 0;
 
         std::random_device rd_;
         std::mt19937 gen_;
@@ -205,11 +256,14 @@ int main(void)
 {
     std::cout << "starting" << std::endl;
 
-    InitWindow(1200, 1200, "raylib [core] example - basic window");
+    int width = 1000;
+    int height = 1000;
+
+    InitWindow(width, height, "raylib [core] example - basic window");
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
-    ParticleUniverse ParticleUniverse(1000,1200,1200);
+    ParticleUniverse ParticleUniverse(1000,width, height);
 
     std::cout << "ParticleUniverse generated" << std::endl;
 
@@ -223,7 +277,7 @@ int main(void)
         std::vector<Particle> particles = ParticleUniverse.step();
         for(auto &particle : particles)
         {
-            DrawCircleV(particle.getPostion(),1,Fade(allColors[particle.color],0.5));
+            DrawCircleGradient(particle.getPostion().x,particle.getPostion().y,5,Fade(allColors[particle.color],0.2),Fade(allColors[particle.color],0.0));
         }
 
         EndDrawing();
