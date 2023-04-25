@@ -9,6 +9,7 @@ FetchContent_Declare(raylib
 FetchContent_MakeAvailable(raylib)
 add_executable(myproject
     main.cpp
-    particle.cpp)
+    particle.cpp
+    spatialHashing.cpp)
 
 target_link_libraries(myproject raylib)

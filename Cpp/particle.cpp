@@ -18,10 +18,11 @@ double F(float distance,float a, float b)
 
 Particle::Particle(float x, float y, int color)
 {
-    this->force = 10.0;
+    this->force = 1.0;
     this->beta = 0.03;
-    this->rMax = 0.05;
-    this->friction = 0.14;
+    this->rMax = 0.1;
+    this->dt   = 0.1;
+    this->friction = 0.014;
     this->color = color;
     this->position = { x, y };
     this->y_limit = y_limit;

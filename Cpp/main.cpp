@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "particle.hpp"
+#include "SpatialHashing.hpp"
 
 #define MAX_COLORS 8
 
@@ -30,57 +31,6 @@ Color allColors[] = {
     WHITE      ,   // White
     BLANK      ,           // Blank (Transparent)
     MAGENTA    ,     // Magenta
-};
-
-
-class SpatialHash {
-public:
-    SpatialHash(float cell_size) : cell_size_(cell_size) {}
-
-    void Add(const Particle& particle) {
-        int cell_x = int(particle.position.x / cell_size_);
-        int cell_y = int(particle.position.y / cell_size_);
-        int cell_id = GetCellID(cell_x, cell_y);
-        objects_by_cell_[cell_id].push_back(particle);
-    }
-
-    std::vector<Particle>& GetObjectsInCell(int cell_x, int cell_y) {
-        int cell_id = GetCellID(cell_x, cell_y);
-        return objects_by_cell_[cell_id];
-    }
-
-    std::vector<Particle> GetNearby(const Particle& particle) const {
-        std::vector<Particle> nearby_objects;
-        int cell_x = int(particle.position.x / cell_size_);
-        int cell_y = int(particle.position.y / cell_size_);
-        for (int i = -1; i <= 1; ++i) {
-            for (int j = -1; j <= 1; ++j) {
-                int cell_id = GetCellID(cell_x +i, cell_y + j);
-                auto it = objects_by_cell_.find(cell_id);
-                if (it != objects_by_cell_.end()) {
-                    for (const Particle& obj : it->second) {
-                        if (obj != particle) {
-                            nearby_objects.push_back(obj);
-                        }
-                    }
-                }
-            }
-        }
-        return nearby_objects;
-    }
-
-    void Clear() {
-        objects_by_cell_.clear();
-    }
-
-private:
-    int GetCellID(int cell_x, int cell_y) const {
-        return cell_x + cell_y * num_cols_;
-    }
-
-    float cell_size_;
-    int num_cols_ = 100; // number of columns in the grid
-    std::unordered_map<int, std::vector<Particle>> objects_by_cell_;
 };
 
 class relationMatrix
@@ -169,7 +119,7 @@ class ParticleUniverse
             return dist_(gen_);
         }
 
-        SpatialHash spatialHash_{0.1};
+        SpatialHash spatialHash_{0.03};
         int quantization = 2;
         int height = 0;
         int width = 0;
@@ -196,7 +146,7 @@ int main(void)
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
-    ParticleUniverse ParticleUniverse(3000,width, height);
+    ParticleUniverse ParticleUniverse(7000,width, height);
 
     std::cout << "ParticleUniverse generated" << std::endl;
 
