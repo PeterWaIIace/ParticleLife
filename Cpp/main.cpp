@@ -1,11 +1,13 @@
 #include "raylib.h"
 #include "raymath.h"
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <random>
 #include <iostream>
 
-#define MAX_COLORS 20
+#include "particle.hpp"
+
+#define MAX_COLORS 8
 
 Color allColors[] = {
     BLUE       ,     // Blue
@@ -31,130 +33,61 @@ Color allColors[] = {
 };
 
 
-double F(float distance,float a, float b)
-{
-    if(distance < b)
-    {
-        return distance/(b-1);
+class SpatialHash {
+public:
+    SpatialHash(float cell_size) : cell_size_(cell_size) {}
+
+    void Add(const Particle& particle) {
+        int cell_x = int(particle.position.x / cell_size_);
+        int cell_y = int(particle.position.y / cell_size_);
+        int cell_id = GetCellID(cell_x, cell_y);
+        objects_by_cell_[cell_id].push_back(particle);
     }
-    else if(b < distance && distance < 1.0)
-    {
-        return a * (1 - abs(2 * distance - 1 - b)/(1 - b));
+
+    std::vector<Particle>& GetObjectsInCell(int cell_x, int cell_y) {
+        int cell_id = GetCellID(cell_x, cell_y);
+        return objects_by_cell_[cell_id];
     }
-    else
-    {
-        return 0.0;
+
+    std::vector<Particle> GetNearby(const Particle& particle) const {
+        std::vector<Particle> nearby_objects;
+        int cell_x = int(particle.position.x / cell_size_);
+        int cell_y = int(particle.position.y / cell_size_);
+        for (int i = -1; i <= 1; ++i) {
+            for (int j = -1; j <= 1; ++j) {
+                int cell_id = GetCellID(cell_x +i, cell_y + j);
+                auto it = objects_by_cell_.find(cell_id);
+                if (it != objects_by_cell_.end()) {
+                    for (const Particle& obj : it->second) {
+                        if (obj != particle) {
+                            nearby_objects.push_back(obj);
+                        }
+                    }
+                }
+            }
+        }
+        return nearby_objects;
     }
-}
 
-class Particle
-{
-    public:
-        Particle(float x, float y, int color)
-        {
-            this->force = 1;
-            this->beta = 0.03;
-            this->rMax = 0.10;
-            this->friction = 0.01;
-            this->color = color;
-            this->position = { x, y };
-            this->y_limit = y_limit;
-            this->x_limit = x_limit;
-            this->velocity = {0.0,0.0};
-        }
+    void Clear() {
+        objects_by_cell_.clear();
+    }
 
-        void resetForce()
-        {
-            this->totalForce = {0.0,0.0};
-        }
+private:
+    int GetCellID(int cell_x, int cell_y) const {
+        return cell_x + cell_y * num_cols_;
+    }
 
-        void addForce(Vector2 otherPostion, float relation)
-        {
-            Vector2 diffV  = Vector2Subtract(this->position,otherPostion);
-            float r = Vector2Distance(this->position,otherPostion);
-
-            if(0 < r && r < this->rMax)
-            {
-                float f = F(r/this->rMax,relation,this->beta);
-                this->totalForce.x += (otherPostion.x - this->position.x)/r * f;
-                this->totalForce.y += (otherPostion.y - this->position.y)/r * f;
-            }
-        }
-
-        void updateVelocity()
-        {
-            this->totalForce.x *= this->rMax * this->force;
-            this->totalForce.y *= this->rMax * this->force;
-
-            this->velocity.x *= this->friction;
-            this->velocity.y *= this->friction;
-
-            this->velocity.x += this->totalForce.x * this->dt;
-            this->velocity.y += this->totalForce.y * this->dt;
-        }
-
-
-        void updatePostion()
-        {
-            this->position.x += this->velocity.x * this->dt;
-            this->position.y += this->velocity.y * this->dt;
-
-            if(this->position.x < 0)
-            {
-                this->position.x = 0.0;
-            }
-
-            if(this->position.y < 0)
-            {
-                this->position.y = 0.0;
-            }
-
-            if(this->position.x > x_limit)
-            {
-                this->position.x = x_limit;
-            }
-
-            if(this->position.y > y_limit)
-            {
-                this->position.y = y_limit;
-            }
-
-        }
-
-        Vector2 getPostion()
-        {
-            return this->position;
-        }
-
-        bool operator==(const Particle& other) const {
-            return this == &other;
-        }
-
-        bool operator!=(const Particle& other) const {
-           return !(*this == other);
-        }
-
-        int color = 0;
-    private:
-        Vector2 totalForce = {0.0,0.0};
-        float dt = 0.02;
-        float rMax   = 1.0;
-        float radius = 1;
-        float y_limit = 1.0;
-        float x_limit = 1.0;
-        float friction = 0.001;
-        float beta = 0.3;
-        float force = 10.0;
-        Vector2 position;
-        Vector2 velocity;
-
+    float cell_size_;
+    int num_cols_ = 100; // number of columns in the grid
+    std::unordered_map<int, std::vector<Particle>> objects_by_cell_;
 };
 
 class relationMatrix
 {
     private:
-        // float arr[MAX_COLORS][MAX_COLORS];
-        float arr[MAX_COLORS][MAX_COLORS] = {{1.0,0.5,0.0},{0.0,1.0,0.5},{-0.1,0.0,1.0}};
+        float arr[MAX_COLORS][MAX_COLORS];
+        // float arr[MAX_COLORS][MAX_COLORS] = {{1.0,0.5,0.0},{0.0,1.0,0.5},{-0.1,0.0,1.0}};
         // float arr[MAX_COLORS][MAX_COLORS] = {{1.0}}; // one for TESTING
         std::random_device rd_;
         std::mt19937 gen_;
@@ -194,12 +127,11 @@ class ParticleUniverse
             for(int i = 0 ; i < nParticles ; i++)
             {
                 this->particles.push_back(Particle(
-                    ((float)this->getRandomInt(0,100))/100.0, // X
-                    ((float)this->getRandomInt(0,100))/100.0,  // Y
+                    ((float)this->getRandomInt(0,100000))/100000.0, // X
+                    ((float)this->getRandomInt(0,100000))/100000.0,  // Y
                     this->getRandomInt(0,MAX_COLORS-1)  // COLOR
                 ));
             }
-
         };
 
         std::vector<Particle> step()
@@ -207,19 +139,24 @@ class ParticleUniverse
             for(auto &particle1 : this->particles)
             {
                 particle1.resetForce();
-                for(auto &particle2 : this->particles)
+
+                std::vector<Particle> surroundingParticles = spatialHash_.GetNearby(particle1);
+
+                for(auto &particle2 : surroundingParticles)
                 {
                     if(particle1 != particle2)
                     {
-                        particle1.addForce(particle2.getPostion(),relations.getRelation(particle1.color,particle2.color));
+                        particle1.addForce(particle2.getPosition(),relations.getRelation(particle1.color,particle2.color));
                     }
                 }
                 particle1.updateVelocity();
             }
 
+            spatialHash_.Clear();
             for(auto &particle : this->particles)
             {
                 particle.updatePostion(); // some random 0.1
+                spatialHash_.Add(particle);
             }
             return particles;
         }
@@ -232,27 +169,7 @@ class ParticleUniverse
             return dist_(gen_);
         }
 
-        void initSpatialMap()
-        {
-            this->cellWidth  = this->width/this->quantization;
-            this->cellHeight = this->height/this->quantization;
-
-            for(auto &particle1 : this->particles)
-            {
-                Vector2 keys = getSpatialPosition(particle1.getPostion());
-                spatialMap[(int)(keys.x)][(int)(keys.y)].push_back(particle1);
-            }
-        }
-
-        Vector2 getSpatialPosition(Vector2 position)
-        {
-            int xKey = (int)(std::ceil((double)position.x/this->cellWidth));
-            int yKey = (int)(std::ceil((double)position.y/this->cellHeight));
-            Vector2 hashKeys = {xKey,yKey};
-            return hashKeys;
-        }
-
-        std::map<int,std::map<int,std::vector<Particle>>> spatialMap;
+        SpatialHash spatialHash_{0.1};
         int quantization = 2;
         int height = 0;
         int width = 0;
@@ -279,7 +196,7 @@ int main(void)
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
-    ParticleUniverse ParticleUniverse(1000,width, height);
+    ParticleUniverse ParticleUniverse(3000,width, height);
 
     std::cout << "ParticleUniverse generated" << std::endl;
 
@@ -293,9 +210,9 @@ int main(void)
         std::vector<Particle> particles = ParticleUniverse.step();
         for(auto &particle : particles)
         {
-            float x = particle.getPostion().x*width;
-            float y = particle.getPostion().y*height;
-            DrawCircleGradient(x,y,3,Fade(allColors[particle.color],0.5),Fade(allColors[particle.color],0.0));
+            float x = particle.getPosition().x*width;
+            float y = particle.getPosition().y*height;
+            DrawCircleGradient(x,y,2,Fade(allColors[particle.color],1),Fade(allColors[particle.color],0.0));
         }
 
         EndDrawing();

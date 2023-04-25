@@ -6,6 +6,9 @@ FetchContent_Declare(raylib
   GIT_TAG master
 )
 
-FetchContent_MakeAvailable(raylib)  
-add_executable(myproject main.cpp)
+FetchContent_MakeAvailable(raylib)
+add_executable(myproject
+    main.cpp
+    particle.cpp)
+
 target_link_libraries(myproject raylib)
