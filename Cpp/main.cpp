@@ -9,9 +9,7 @@
 #include "particle.hpp"
 #include "SpatialHashing.hpp"
 
-#define MAX_COLORS 8
-
-Color allColors[] = {
+extern Color allColors[] = {
     BLUE       ,     // Blue
     GREEN      ,      // Green
     YELLOW     ,     // Yellow
@@ -32,39 +30,6 @@ Color allColors[] = {
     WHITE      ,   // White
     BLANK      ,           // Blank (Transparent)
     MAGENTA    ,     // Magenta
-};
-
-class relationMatrix
-{
-    private:
-        float arr[MAX_COLORS][MAX_COLORS];
-        // float arr[MAX_COLORS][MAX_COLORS] = {{1.0,0.5,0.0},{0.0,1.0,0.5},{-0.1,0.0,1.0}};
-        // float arr[MAX_COLORS][MAX_COLORS] = {{1.0}}; // one for TESTING
-        std::random_device rd_;
-        std::mt19937 gen_;
-        std::uniform_int_distribution<> dist_;
-
-        int relationMatrix::getRandomInt(int min, int max)
-        {
-            dist_.param(std::uniform_int_distribution<>::param_type{min, max});
-            return dist_(gen_);
-        }
-    public:
-        relationMatrix() : rd_{}, gen_{rd_()}, dist_(1,100)
-        {
-            for(int i = 0 ; i <MAX_COLORS ; i++)
-            {
-                for(int j = 0 ; j <MAX_COLORS ; j++)
-                {
-                    arr[i][j] = (float)getRandomInt(-100,100)/100.0;
-                }
-            }
-        }
-
-        float getRelation(int firstColor,int secondColor)
-        {
-            return arr[firstColor][secondColor];
-        }
 };
 
 class ParticleUniverse
@@ -91,15 +56,8 @@ class ParticleUniverse
             {
                 particle1.resetForce();
 
-                std::vector<Particle> surroundingParticles = spatialHash_.GetNearby(particle1);
-
-                for(auto &particle2 : surroundingParticles)
-                {
-                    if(particle1 != particle2)
-                    {
-                        particle1.addForce(particle2.getPosition(),relations.getRelation(particle1.color,particle2.color));
-                    }
-                }
+                spatialHash_.GetNearby(particle1);
+                
                 particle1.updateVelocity();
             }
 
@@ -133,7 +91,6 @@ class ParticleUniverse
 
         std::vector<Particle> particles;
 
-        relationMatrix relations;
 };
 
 int main(void)
@@ -147,7 +104,7 @@ int main(void)
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
-    ParticleUniverse ParticleUniverse(10000,width, height);
+    ParticleUniverse ParticleUniverse(5000,width, height);
 
     std::cout << "ParticleUniverse generated" << std::endl;
 
