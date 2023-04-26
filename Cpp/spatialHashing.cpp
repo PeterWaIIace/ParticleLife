@@ -1,6 +1,11 @@
 #include "spatialHashing.hpp"
+#include <iostream>
 
-SpatialHash::SpatialHash(float cell_size) : cell_size_(cell_size) {}
+SpatialHash::SpatialHash(float cell_size) : cell_size_(cell_size) {
+    int numberOfBuckets = int((1/cell_size)*(1/cell_size));
+    objects_by_cell_.reserve(numberOfBuckets);
+
+}
 
 void SpatialHash::Add(const Particle& particle) {
     int cell_x = int(particle.position.x / cell_size_);
@@ -23,11 +28,8 @@ std::vector<Particle> SpatialHash::GetNearby(const Particle& particle) const {
             int cell_id = GetCellID(cell_x +i, cell_y + j);
             auto it = objects_by_cell_.find(cell_id);
             if (it != objects_by_cell_.end()) {
-                for (const Particle& obj : it->second) {
-                    if (obj != particle) {
-                        nearby_objects.push_back(obj);
-                    }
-                }
+                std::vector<Particle> bucket = objects_by_cell_.at(cell_id);
+                nearby_objects.insert(nearby_objects.end(), bucket.begin(), bucket.end());
             }
         }
     }

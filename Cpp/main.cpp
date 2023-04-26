@@ -4,6 +4,7 @@
 #include <vector>
 #include <random>
 #include <iostream>
+#include <chrono>
 
 #include "particle.hpp"
 #include "SpatialHashing.hpp"
@@ -77,8 +78,8 @@ class ParticleUniverse
             for(int i = 0 ; i < nParticles ; i++)
             {
                 this->particles.push_back(Particle(
-                    ((float)this->getRandomInt(0,100000))/100000.0, // X
-                    ((float)this->getRandomInt(0,100000))/100000.0,  // Y
+                    ((float)this->getRandomInt(0,10000))/10000.0, // X
+                    ((float)this->getRandomInt(0,10000))/10000.0,  // Y
                     this->getRandomInt(0,MAX_COLORS-1)  // COLOR
                 ));
             }
@@ -119,7 +120,7 @@ class ParticleUniverse
             return dist_(gen_);
         }
 
-        SpatialHash spatialHash_{0.03};
+        SpatialHash spatialHash_{0.1};
         int quantization = 2;
         int height = 0;
         int width = 0;
@@ -146,7 +147,7 @@ int main(void)
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
-    ParticleUniverse ParticleUniverse(7000,width, height);
+    ParticleUniverse ParticleUniverse(10000,width, height);
 
     std::cout << "ParticleUniverse generated" << std::endl;
 

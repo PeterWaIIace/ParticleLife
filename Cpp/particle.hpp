@@ -29,6 +29,7 @@ class Particle
         Vector2 position;
     private:
         Vector2 totalForce = {0.0,0.0};
+        int hashIndex = 0.0;
         float dt = 0.02;
         float rMax   = 1.0;
         float radius = 1;

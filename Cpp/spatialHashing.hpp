@@ -6,6 +6,7 @@
 
 class SpatialHash {
 public:
+    
     SpatialHash(float cell_size);
 
     void Add(const Particle& particle);
@@ -21,4 +22,6 @@ private:
     float cell_size_;
     int num_cols_ = 100; // number of columns in the grid
     std::unordered_map<int, std::vector<Particle>> objects_by_cell_;
+
+    // Particle objects_by_cell_[][][];
 };
