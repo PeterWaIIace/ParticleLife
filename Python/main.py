@@ -24,13 +24,13 @@ def timeit(function):
 def F(r,a,B):
 
     if(r < B):
-        return r/(1-B)
+        return r/B - 1
     elif(r > B and r < 1):
-        return - a * (1 - abs(2 * r - 1 - B)/(1 - B))
+        return a * (1 - abs(2 * r - 1 - B)/(1 - B))
     else:
         return 0
 
-@timeit
+# @timeit
 def updateVelocities(nParticles,positions,colors,velocities,rMax,dt):
     for n in range(nParticles):
         positionsToCompare = positions.copy()
@@ -46,7 +46,7 @@ def updateVelocity(nParticles,position,color,velocity,positionToCompare,colors,r
         r = math.dist(position,positionToCompare[j])
         if(0 < r and r < rMax):
             f = F(r/rMax, attractionMatrix[color][colors[j]],Beta)
-            totalForce += (position - positionToCompare[j])/r * f
+            totalForce += ((positionToCompare[j] - position)/r) * f
 
     totalForce *= rMax
 
@@ -55,7 +55,7 @@ def updateVelocity(nParticles,position,color,velocity,positionToCompare,colors,r
 
     return velocity
 
-@timeit
+# @timeit
 def updatePositions(nParticles,positions,dt):
     # # update particles
     for n in range(nParticles):
@@ -63,7 +63,7 @@ def updatePositions(nParticles,positions,dt):
 
     return positions
 
-@timeit
+# @timeit
 def drawParticles(nParticles,colors,positions,screenDim):
     # draw particles
     for n in range(nParticles):
@@ -76,15 +76,15 @@ def getHash(x,y,step):
 if __name__=="__main__":
 
     nColors = 3
-    Beta = 0.1
-    friction = 0.6
-    rMax = 0.5 # max distance
-    dt = 0.1
+    Beta = 0.01
+    friction = 0.04
+    rMax = 1 # max distance
+    dt = 0.05
     maxForce = 1
     nParticles = 100
 
-    # attractionMatrix = np.random.randint(-1,1,size=(nColors,nColors))
-    attractionMatrix = np.array([[1.0,0.1,0],[0,1.0,0.1],[0.1,0,1.0]])
+    attractionMatrix = np.random.uniform(-1, 1, (nColors,nColors))
+    # attractionMatrix = np.array([[1.0,0.5,0],[0,1.0,0.5],[-0.4,0,1.0]])
 
     screenDim = 800
 
