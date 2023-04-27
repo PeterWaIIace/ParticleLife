@@ -6,11 +6,8 @@ import time
 BLUE = np.array((0, 0, 255))
 GREEN = np.array((0, 255, 0))
 RED = np.array((255, 0, 0))
-COLOR4 = np.array((0, 255, 255))
-COLOR5 = np.array((255, 0, 255))
-COLOR6 = np.array((255, 255, 0))
 
-colorsTable = [BLUE, GREEN, RED,COLOR4 , COLOR5, COLOR6]
+colorsTable = [BLUE, GREEN, RED]
 
 spatialBucket = {}
 
@@ -78,7 +75,7 @@ def getHash(x,y,step):
 
 if __name__=="__main__":
 
-    nColors = 6
+    nColors = 3
     Beta = 0.01
     friction = 0.04
     rMax = 1 # max distance

@@ -4,7 +4,7 @@ double F(float distance,float a, float b)
 {
     if(distance < b)
     {
-        return distance/(b-1);
+        return distance/b - 1;
     }
     else if(b < distance && distance < 1.0)
     {
@@ -20,10 +20,10 @@ Particle::Particle(float x, float y, int color)
 {
     this->hashIndex = 0;
     this->force = 1.0;
-    this->beta = 0.03;
+    this->beta = 0.3;
     this->rMax = 0.1;
-    this->dt   = 0.1;
-    this->friction = 0.014;
+    this->dt   = 0.05;
+    this->friction = 0.04;
     this->color = color;
     this->position = { x, y };
     this->y_limit = y_limit;

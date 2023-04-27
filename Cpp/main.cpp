@@ -104,7 +104,7 @@ int main(void)
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
-    ParticleUniverse ParticleUniverse(5000,width, height);
+    ParticleUniverse ParticleUniverse(4000,width, height);
 
     std::cout << "ParticleUniverse generated" << std::endl;
 
@@ -120,7 +120,7 @@ int main(void)
         {
             float x = particle.getPosition().x*width;
             float y = particle.getPosition().y*height;
-            DrawCircleGradient(x,y,2,Fade(allColors[particle.color],1),Fade(allColors[particle.color],0.0));
+            DrawCircleGradient(x,y,5,Fade(allColors[particle.color],0.5),Fade(allColors[particle.color],0.0));
         }
 
         EndDrawing();
