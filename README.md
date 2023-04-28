@@ -1,8 +1,8 @@
 # ParticleLife
 
-Particle life is algorithm showing emergent bacterial-like behaviours by simulating set of particles following simple rules. Particle are only interacting through attraction or repelment with each other. However, as this is nonphysical simulation, meaning that energy conservation rule is not obeyed, there has to be added liquid physics simulation rules, like system friction, so particle energy can be dissipated.
+The Particle Life algorithm is like a work of art, depicting the emergence of beautiful, bacterial-like behaviors from a set of simple rules governing the interactions between particles. The particles only interact through attraction and repulsion, but with the addition of liquid physics simulation rules, such as system friction, they settle into stunning configurations.
 
-That simple set of behaviour leads to eye catching emergence, giving feeling that structures are almost exhibiting exploratory behaviours.
+It's remarkable how these basic behaviors can give rise to eye-catching emergent structures that seem to exhibit a sense of exploration. It's a reminder that even the simplest of rules can produce complex and fascinating outcomes.
 
 Some prelimiary results - still not optimal: 
 
