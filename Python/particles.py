@@ -1,5 +1,5 @@
 import numpy as np
-import pygame
+# import pygame
 import math
 import time 
 
@@ -60,7 +60,7 @@ class ParticleSystem:
         self.nParticles = len(coloredParticleList)
         self.attractionMatrix = attractionMatrix
         self.colors = coloredParticleList
-        self.positions = (center_xy - np.random.rand(self.nParticles,2))/range_xy
+        self.positions = np.random.rand(self.nParticles,2)
         self.velocities = np.zeros((self.nParticles,2))
 
     def updateVelocities(self):
@@ -109,40 +109,40 @@ def drawParticles(screen,nParticles,colors,positions,screenDim):
         circle_radius = 2
         pygame.draw.circle(screen, colorsTable[colors[n]], positions[n]*screenDim, circle_radius)
 
-if __name__=="__main__":
+# if __name__=="__main__":
 
-    nColors = 6
-    Beta = 0.01
-    friction = 0.04
-    rMax = 0.5 # max distance
-    dt = 0.05
-    nParticles = 100
-    particles = ParticleSystem(nParticles,nColors,rMax,dt,Beta,friction)
-    particles.generateRandomSystem()
+#     nColors = 6
+#     Beta = 0.01
+#     friction = 0.04
+#     rMax = 0.5 # max distance
+#     dt = 0.05
+#     nParticles = 100
+#     particles = ParticleSystem(nParticles,nColors,rMax,dt,Beta,friction)
+#     particles.generateRandomSystem()
 
-    screenDim = 400
-    # attractionMatrix = np.array([[1.0,0.5,0],[0,1.0,0.5],[-0.4,0,1.0]])
+#     screenDim = 400
+#     # attractionMatrix = np.array([[1.0,0.5,0],[0,1.0,0.5],[-0.4,0,1.0]])
 
-    # initialize pygame
-    pygame.init()
-    # set the width and height of the screen
-    screen = pygame.display.set_mode((screenDim, screenDim))
+#     # initialize pygame
+#     pygame.init()
+#     # set the width and height of the screen
+#     screen = pygame.display.set_mode((screenDim, screenDim))
 
-    # main loop
-    while True:
-        # handle events
-        # clear the screen with the background color
-        screen.fill((0,0,0))
+#     # main loop
+#     while True:
+#         # handle events
+#         # clear the screen with the background color
+#         screen.fill((0,0,0))
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
+#         for event in pygame.event.get():
+#             if event.type == pygame.QUIT:
+#                 pygame.quit()
+#                 quit()
 
-        drawParticles(particles.nParticles,particles.colors,particles.positions,screenDim)
+#         drawParticles(particles.nParticles,particles.colors,particles.positions,screenDim)
 
-        particles.loop()
+#         particles.loop()
 
-        # update the screen
-        pygame.display.update()
-        # pygame.display.flip()
+#         # update the screen
+#         pygame.display.update()
+#         # pygame.display.flip()
