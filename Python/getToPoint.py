@@ -11,14 +11,14 @@ class World:
     def __init__(self, genome):
         self.genome = genome
         self.nColors = 6
-        attractionMatrix, listOfParticles = self.decodeGenome(self.genome)
+        positions, attractionMatrix, listOfParticles = self.decodeGenome(self.genome)
 
         Beta = 0.01
         friction = 0.04
         rMax = 0.5 # max distance
         dt = 0.05
         self.particleSystem = ParticleSystem(rMax=rMax,dt=dt,friction=friction,Beta=Beta)
-        self.particleSystem.generateSpecificSystem(np.array((0,0)),np.array((1,1)),listOfParticles,attractionMatrix)
+        self.particleSystem.generateSpecificSystem(,listOfParticles,attractionMatrix)
 
     def decodeGenome(self,genome):
         attractionMatrix = np.zeros((self.nColors,self.nColors),dtype=np.float32)
@@ -32,7 +32,7 @@ class World:
             listOfParticles.append(np.ones((genome[n+offset])+32,dtype=np.int32) * n)
 
         listOfParticles = np.concatenate(listOfParticles)
-        return attractionMatrix,listOfParticles
+        return position,attractionMatrix,listOfParticles
 
     def run(self):
         r = np.zeros(self.particleSystem.nParticles)
@@ -49,6 +49,40 @@ class World:
 
 
         return np.median(r)
+
+    def show(self):
+
+        pygame.init()
+        # set the width and height of the screen
+        screenDim = 400
+        screen = pygame.display.set_mode((screenDim, screenDim))
+
+        r = np.zeros(self.particleSystem.nParticles)
+
+        target_x = 0.75
+        target_y = 0.75
+
+        for n in range(100):
+
+            screen.fill((0,0,0))
+
+            self.particleSystem.loop()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+
+            drawParticles(screen,self.particleSystem.nParticles,self.particleSystem.colors,self.particleSystem.positions,screenDim)
+            rect_x = target_x*screenDim
+            rect_y = target_y*screenDim
+            rect = pygame.Rect(rect_x, rect_y, 5, 5)
+            pygame.draw.rect(screen, (250,125,125), rect, 5)
+
+
+            # update the screen
+            pygame.display.update()
+
+        pygame.quit()
 
 def runInstance(genome):
     w = World(genome)
@@ -75,8 +109,11 @@ if __name__=="__main__":
             results = pool.map(runInstance,genomes)
 
         print(results,generation)
-        best = np.argMin(results)
+        best = np.argmin(results)
         bestGenome = genomes[best]
+
+        w = World(genomes[best])
+        w.show()
 
         results,generation
 

@@ -1,5 +1,5 @@
 import numpy as np
-# import pygame
+import pygame
 import math
 import time 
 
@@ -56,7 +56,7 @@ class ParticleSystem:
         self.velocities = np.zeros((self.nParticles,2))
 
     # you need to scale center_xy by screen dimension, same with range_xy
-    def generateSpecificSystem(self,center_xy,range_xy,coloredParticleList,attractionMatrix):
+    def generateSpecificSystem(self,positions,coloredParticleList,attractionMatrix):
         self.nParticles = len(coloredParticleList)
         self.attractionMatrix = attractionMatrix
         self.colors = coloredParticleList
