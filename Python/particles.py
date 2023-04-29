@@ -35,59 +35,74 @@ def F(r,a,B):
 
 class ParticleSystem:
 
-    def __init__(self,nParticles,nColors,rMax,dt,Beta,friction):
+    def __init__(self,rMax,dt,Beta,friction):
 
-        self.nParticles = nParticles
-        self.positions  = np.random.rand(nParticles,2)
-        self.velocities = np.zeros((nParticles,2))
-        self.colors     = np.random.randint(0,nColors,size=nParticles)
-        self.attractionMatrix = np.random.uniform(-1, 1, (nColors,nColors))
+        # self.nParticles = nParticles
+        # self.positions  = np.random.rand(nParticles,2)
+        # self.colors     = np.random.randint(0,nColors,size=nParticles)
+        # self.attractionMatrix = np.random.uniform(-1, 1, (nColors,nColors))
         self.rMax = rMax
         self.dt = dt
         self.Beta = Beta
         self.friction = friction
         pass
 
-    def updateVelocities(self,rMax,dt):
+    def generateRandomSystem(self,nParticles,nColors):
+        self.nParticles = nParticles
+        self.positions  = np.random.rand(nParticles,2)
+        self.velocities = np.zeros((nParticles,2))
+        self.colors     = np.random.randint(0,nColors,size=nParticles)
+        self.attractionMatrix = np.random.uniform(-1, 1, (nColors,nColors))
+        self.velocities = np.zeros((self.nParticles,2))
+
+    # you need to scale center_xy by screen dimension, same with range_xy
+    def generateSpecificSystem(self,center_xy,range_xy,coloredParticleList,attractionMatrix):
+        self.nParticles = len(coloredParticleList)
+        self.attractionMatrix = attractionMatrix
+        self.colors = coloredParticleList
+        self.positions = (center_xy - np.random.rand(self.nParticles,2))/range_xy
+        self.velocities = np.zeros((self.nParticles,2))
+
+    def updateVelocities(self):
         for n in range(self.nParticles):
             positionsToCompare = self.positions.copy()
             positionsToCompare = np.delete(positionsToCompare,n,axis=0)
-            self.velocities[n] = self.updateVelocity(self.positions[n],self.colors[n],self.velocities[n],positionsToCompare,self.colors,rMax,dt)
+            self.velocities[n] = self.updateVelocity(self.positions[n],self.colors[n],self.velocities[n],positionsToCompare,self.colors)
         return self.velocities
 
-    def updateVelocity(self,position,color,velocity,positionsToCompare,colors,rMax,dt):
+    def updateVelocity(self,position,color,velocity,positionsToCompare,colors):
         # calcuate forces
         totalForce = np.zeros(2)
 
         for j in range(len(positionsToCompare)):
             r = math.dist(position,positionsToCompare[j])
-            if(0 < r and r < rMax):
-                f = F(r/rMax, self.attractionMatrix[color][colors[j]],Beta)
+            if(0 < r and r < self.rMax):
+                f = F(r/self.rMax, self.attractionMatrix[color][colors[j]],self.Beta)
                 totalForce += ((positionsToCompare[j] - position)/r) * f
 
-        totalForce *= rMax
+        totalForce *= self.rMax
 
         velocity *= self.friction
-        velocity += totalForce * dt
+        velocity += totalForce * self.dt
 
         return velocity
 
     # @timeit
-    def updatePositions(self,dt):
+    def updatePositions(self):
         # # update particles
         for n in range(self.nParticles):
-            self.positions[n] += self.velocities[n] * dt
+            self.positions[n] += self.velocities[n] * self.dt
 
         return self.positions
 
     def loop(self,drawingTask=None):
-        self.velocities = self.updateVelocities(self.rMax,self.dt)
+        self.velocities = self.updateVelocities()
         # # update particles
-        self.positions = self.updatePositions(self.dt)
+        self.positions = self.updatePositions()
 
 
 # @timeit
-def drawParticles(nParticles,colors,positions,screenDim):
+def drawParticles(screen,nParticles,colors,positions,screenDim):
     # draw particles
     for n in range(nParticles):
         # draw the circle
@@ -103,6 +118,7 @@ if __name__=="__main__":
     dt = 0.05
     nParticles = 100
     particles = ParticleSystem(nParticles,nColors,rMax,dt,Beta,friction)
+    particles.generateRandomSystem()
 
     screenDim = 400
     # attractionMatrix = np.array([[1.0,0.5,0],[0,1.0,0.5],[-0.4,0,1.0]])
