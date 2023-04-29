@@ -5,6 +5,7 @@
 #include <random>
 #include <iostream>
 #include <chrono>
+#include <thread>
 
 #include "particle.hpp"
 #include "SpatialHashing.hpp"
@@ -52,13 +53,13 @@ class ParticleUniverse
 
         std::vector<Particle> step()
         {
-            for(auto &particle1 : this->particles)
+            auto start = std::chrono::high_resolution_clock::now();
+            int i = 0;
+            for(auto &particle : this->particles)
             {
-                particle1.resetForce();
-
-                spatialHash_.GetNearby(particle1);
-                
-                particle1.updateVelocity();
+                particle.resetForce();
+                spatialHash_.GetNearby(particle);
+                particle.updateVelocity();
             }
 
             spatialHash_.Clear();
@@ -78,7 +79,7 @@ class ParticleUniverse
             return dist_(gen_);
         }
 
-        SpatialHash spatialHash_{0.1};
+        SpatialHash spatialHash_{0.03};
         int quantization = 2;
         int height = 0;
         int width = 0;
@@ -97,14 +98,14 @@ int main(void)
 {
     std::cout << "starting" << std::endl;
 
-    int width  = 1000;
-    int height = 1000;
+    int width  = 1200;
+    int height = 1200;
 
     InitWindow(width, height, "raylib [core] example - basic window");
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
-    ParticleUniverse ParticleUniverse(4000,width, height);
+    ParticleUniverse ParticleUniverse(8000,width, height);
 
     std::cout << "ParticleUniverse generated" << std::endl;
 
@@ -120,7 +121,7 @@ int main(void)
         {
             float x = particle.getPosition().x*width;
             float y = particle.getPosition().y*height;
-            DrawCircleGradient(x,y,5,Fade(allColors[particle.color],0.5),Fade(allColors[particle.color],0.0));
+            DrawCircleGradient(x,y,3,Fade(allColors[particle.color],1),Fade(allColors[particle.color],0.0));
         }
 
         EndDrawing();

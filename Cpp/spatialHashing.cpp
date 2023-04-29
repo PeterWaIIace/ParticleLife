@@ -32,8 +32,12 @@ SpatialHash::SpatialHash(float cell_size) : cell_size_(cell_size) {
 void SpatialHash::Add(const Particle& particle) {
     int cell_x = int(particle.position.x / cell_size_);
     int cell_y = int(particle.position.y / cell_size_);
-    int cell_id = GetCellID(cell_x, cell_y);
-    objects_by_cell_[cell_id].push_back(particle);
+    for (int i = -1; i <= 1; ++i) {
+        for (int j = -1; j <= 1; ++j) {
+            int cell_id = GetCellID(cell_x+i, cell_y+j);
+            objects_by_cell_[cell_id].push_back(particle);
+        }
+    }
 }
 
 std::vector<Particle>& SpatialHash::GetObjectsInCell(int cell_x, int cell_y) {
@@ -47,18 +51,14 @@ void SpatialHash::GetNearby(Particle& particle) const {
     int cell_x = int(particle.position.x / cell_size_);
     int cell_y = int(particle.position.y / cell_size_);
 
-    for (int i = -1; i <= 1; ++i) {
-        for (int j = -1; j <= 1; ++j) {
-            int cell_id = GetCellID(cell_x  +i, cell_y + j);
-            auto it = objects_by_cell_.find(cell_id);
-            if (it != objects_by_cell_.end()) {
-                for (const Particle& particle2 : it->second) {
-                    if(particle != particle2)
-                    {
-                        float rel = const_cast<relationMatrix&>(relations).getRelation(particle.color,particle2.color);
-                        particle.addForce(const_cast<Particle&>(particle2).getPosition(),rel);
-                    }
-                }
+    int cell_id = GetCellID(cell_x, cell_y);
+    auto it = objects_by_cell_.find(cell_id);
+    if (it != objects_by_cell_.end()) {
+        for (const Particle& particle2 : it->second) {
+            if(particle != particle2)
+            {
+                float rel = const_cast<relationMatrix&>(relations).getRelation(particle.color,particle2.color);
+                particle.addForce(const_cast<Particle&>(particle2).getPosition(),rel);
             }
         }
     }

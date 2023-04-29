@@ -33,77 +33,84 @@ def F(r,a,B):
     else:
         return 0
 
-# @timeit
-def updateVelocities(nParticles,positions,colors,velocities,rMax,dt):
-    for n in range(nParticles):
-        positionsToCompare = positions.copy()
-        positionsToCompare = np.delete(positionsToCompare,n)
-        velocities[n] = updateVelocity(nParticles,positions[n],colors[n],velocities[n],positions,colors,rMax,dt)
-    return velocities
+class ParticleSystem:
 
-def updateVelocity(nParticles,position,color,velocity,positionToCompare,colors,rMax,dt):
-    # calcuate forces
-    totalForce = np.zeros(2)
+    def __init__(self,nParticles,nColors,rMax,dt,Beta,friction):
 
-    for j in range(nParticles):
-        r = math.dist(position,positionToCompare[j])
-        if(0 < r and r < rMax):
-            f = F(r/rMax, attractionMatrix[color][colors[j]],Beta)
-            totalForce += ((positionToCompare[j] - position)/r) * f
+        self.nParticles = nParticles
+        self.positions  = np.random.rand(nParticles,2)
+        self.velocities = np.zeros((nParticles,2))
+        self.colors     = np.random.randint(0,nColors,size=nParticles)
+        self.attractionMatrix = np.random.uniform(-1, 1, (nColors,nColors))
+        self.rMax = rMax
+        self.dt = dt
+        self.Beta = Beta
+        self.friction = friction
+        pass
 
-    totalForce *= rMax
+    def updateVelocities(self,rMax,dt):
+        for n in range(self.nParticles):
+            positionsToCompare = self.positions.copy()
+            positionsToCompare = np.delete(positionsToCompare,n,axis=0)
+            self.velocities[n] = self.updateVelocity(self.positions[n],self.colors[n],self.velocities[n],positionsToCompare,self.colors,rMax,dt)
+        return self.velocities
 
-    velocity *= friction
-    velocity += totalForce * dt
+    def updateVelocity(self,position,color,velocity,positionsToCompare,colors,rMax,dt):
+        # calcuate forces
+        totalForce = np.zeros(2)
 
-    return velocity
+        for j in range(len(positionsToCompare)):
+            r = math.dist(position,positionsToCompare[j])
+            if(0 < r and r < rMax):
+                f = F(r/rMax, self.attractionMatrix[color][colors[j]],Beta)
+                totalForce += ((positionsToCompare[j] - position)/r) * f
 
-# @timeit
-def updatePositions(nParticles,positions,dt):
-    # # update particles
-    for n in range(nParticles):
-        positions[n] += velocities[n] * dt
+        totalForce *= rMax
 
-    return positions
+        velocity *= self.friction
+        velocity += totalForce * dt
+
+        return velocity
+
+    # @timeit
+    def updatePositions(self,dt):
+        # # update particles
+        for n in range(self.nParticles):
+            self.positions[n] += self.velocities[n] * dt
+
+        return self.positions
+
+    def loop(self,drawingTask=None):
+        self.velocities = self.updateVelocities(self.rMax,self.dt)
+        # # update particles
+        self.positions = self.updatePositions(self.dt)
+
 
 # @timeit
 def drawParticles(nParticles,colors,positions,screenDim):
     # draw particles
     for n in range(nParticles):
         # draw the circle
+        circle_radius = 2
         pygame.draw.circle(screen, colorsTable[colors[n]], positions[n]*screenDim, circle_radius)
-
-def getHash(x,y,step):
-    return math.ceil(x/step),math.ceil(y/step)
 
 if __name__=="__main__":
 
     nColors = 6
     Beta = 0.01
     friction = 0.04
-    rMax = 1 # max distance
+    rMax = 0.5 # max distance
     dt = 0.05
-    maxForce = 1
     nParticles = 100
+    particles = ParticleSystem(nParticles,nColors,rMax,dt,Beta,friction)
 
-    attractionMatrix = np.random.uniform(-1, 1, (nColors,nColors))
+    screenDim = 400
     # attractionMatrix = np.array([[1.0,0.5,0],[0,1.0,0.5],[-0.4,0,1.0]])
-
-    screenDim = 800
-
-    positions  = np.random.rand(nParticles,2)
-    velocities = np.zeros((nParticles,2))
-    colors     = np.random.randint(0,nColors,size=nParticles)
 
     # initialize pygame
     pygame.init()
-
     # set the width and height of the screen
     screen = pygame.display.set_mode((screenDim, screenDim))
-
-    # set the center and radius of the circle
-    circle_center = (400, 300)
-    circle_radius = 1
 
     # main loop
     while True:
@@ -116,11 +123,10 @@ if __name__=="__main__":
                 pygame.quit()
                 quit()
 
-        drawParticles(nParticles,colors,positions,screenDim)
+        drawParticles(particles.nParticles,particles.colors,particles.positions,screenDim)
 
-        velocities = updateVelocities(nParticles,positions,colors,velocities,rMax,dt)
-        # # update particles
-        positions = updatePositions(nParticles,positions,dt)
+        particles.loop()
+
         # update the screen
         pygame.display.update()
         # pygame.display.flip()

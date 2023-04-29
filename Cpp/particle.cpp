@@ -21,8 +21,8 @@ Particle::Particle(float x, float y, int color)
     this->hashIndex = 0;
     this->force = 1.0;
     this->beta = 0.3;
-    this->rMax = 0.1;
-    this->dt   = 0.05;
+    this->rMax = 0.05;
+    this->dt   = 0.03;
     this->friction = 0.04;
     this->color = color;
     this->position = { x, y };
