@@ -8,6 +8,7 @@ Some prelimiary results - still not optimal:
 
 ![particleLife](https://user-images.githubusercontent.com/40773550/234987226-72c52e8c-6991-4da5-bcae-75d3ea1086da.gif)
 
+![petriDish](https://user-images.githubusercontent.com/40773550/235329875-f2ffb97e-4423-4bc2-95d3-22568367a90d.gif)
 
 # How to:
 
