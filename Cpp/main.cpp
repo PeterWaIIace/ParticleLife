@@ -14,12 +14,9 @@ extern Color allColors[] = {
     BLUE       ,     // Blue
     GREEN      ,      // Green
     YELLOW     ,     // Yellow
-    GOLD       ,     // Gold
-    ORANGE     ,     // Orange
-    PINK       ,   // Pink
-    RED        ,     // Red
     LIME       ,      // Lime
     DARKGREEN  ,      // Dark Green
+    RED        ,     // Red
     SKYBLUE    ,   // Sky Blue
     DARKBLUE   ,      // Dark Blue
     PURPLE     ,   // Purple
@@ -79,7 +76,7 @@ class ParticleUniverse
             return dist_(gen_);
         }
 
-        SpatialHash spatialHash_{0.03};
+        SpatialHash spatialHash_{0.05};
         int quantization = 2;
         int height = 0;
         int width = 0;
@@ -105,7 +102,7 @@ int main(void)
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
-    ParticleUniverse ParticleUniverse(8000,width, height);
+    ParticleUniverse ParticleUniverse(6000,width, height);
 
     std::cout << "ParticleUniverse generated" << std::endl;
 

@@ -19,7 +19,7 @@ double F(float distance,float a, float b)
 Particle::Particle(float x, float y, int color)
 {
     this->hashIndex = 0;
-    this->force = 1.0;
+    this->force = 5.0;
     this->beta = 0.3;
     this->rMax = 0.05;
     this->dt   = 0.03;

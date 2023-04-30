@@ -16,7 +16,7 @@ You can compile version C++:
 cd Cpp\build ; cmake .. ; cmake --build . ; .\Debug\myproject.exe
 ```
 
-Or run python script:
+Python is currently WiP:
 ```
-cd python ; python main.py
+[Work in Progress]
 ```
