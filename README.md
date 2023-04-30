@@ -1,8 +1,9 @@
 # ParticleLife
 
-The Particle Life algorithm is like a work of art, depicting the emergence of beautiful, bacterial-like behaviors from a set of simple rules governing the interactions between particles. The particles only interact through attraction and repulsion, but with the addition of liquid physics simulation rules, such as system friction, they settle into stunning configurations.
+"The Particle Life algorithm is like a work of art, depicting the emergence of beautiful, bacterial-like behaviors from a set of simple rules governing the interactions between particles. The particles only interact through attraction and repulsion, but with the addition of liquid physics simulation rules, such as system friction, they settle into stunning configurations.
 
-It's remarkable how these basic behaviors can give rise to eye-catching emergent structures that seem to exhibit a sense of exploration. It's a reminder that even the simplest of rules can produce complex and fascinating outcomes.
+It's remarkable how these basic behaviors can give rise to eye-catching emergent structures that seem to exhibit a sense of exploration. It's a reminder that even the simplest of rules can produce complex and fascinating outcomes."
+~ChatGPT 2023
 
 Some prelimiary results - still not optimal: 
 
