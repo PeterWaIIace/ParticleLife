@@ -95,14 +95,14 @@ int main(void)
 {
     std::cout << "starting" << std::endl;
 
-    int width  = 1200;
-    int height = 1200;
+    int width  = 1000;
+    int height = 1000;
 
     InitWindow(width, height, "raylib [core] example - basic window");
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
-    ParticleUniverse ParticleUniverse(6000,width, height);
+    ParticleUniverse ParticleUniverse(5000,width, height);
 
     std::cout << "ParticleUniverse generated" << std::endl;
 
@@ -119,6 +119,7 @@ int main(void)
             float x = particle.getPosition().x*width;
             float y = particle.getPosition().y*height;
             DrawCircleGradient(x,y,3,Fade(allColors[particle.color],1),Fade(allColors[particle.color],0.0));
+            DrawCircleGradient(x,y,10,Fade(allColors[particle.color],0.2),Fade(allColors[particle.color],0.0));
         }
 
         EndDrawing();

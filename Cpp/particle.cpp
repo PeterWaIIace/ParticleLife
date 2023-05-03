@@ -1,4 +1,5 @@
 #include "particle.hpp"
+#include <iostream>
 
 double F(float distance,float a, float b)
 {
@@ -67,24 +68,24 @@ void Particle::updatePostion()
     this->position.x += this->velocity.x * this->dt;
     this->position.y += this->velocity.y * this->dt;
 
-    if(this->position.x < 0)
+    if(this->position.x < this->boundary[0])
     {
-        this->position.x = 0.0;
+        this->position.x = this->boundary[1]-0.001;
     }
 
-    if(this->position.y < 0)
+    if(this->position.y < this->boundary[0])
     {
-        this->position.y = 0.0;
+        this->position.y = this->boundary[1]-0.001;
     }
 
-    if(this->position.x > x_limit)
+    if(this->position.x > this->boundary[1])
     {
-        this->position.x = x_limit;
+        this->position.x = this->boundary[0]+0.001;
     }
 
-    if(this->position.y > y_limit)
+    if(this->position.y > this->boundary[1])
     {
-        this->position.y = y_limit;
+        this->position.y = this->boundary[0]+0.001;
     }
 
 

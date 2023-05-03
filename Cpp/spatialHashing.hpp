@@ -41,6 +41,7 @@ private:
     int GetCellID(int cell_x, int cell_y) const;
 
     float cell_size_;
+    int numberOfBuckets = 0;
     int num_cols_ = 100; // number of columns in the grid
     std::unordered_map<int, std::vector<Particle>> objects_by_cell_;
 
