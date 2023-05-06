@@ -1,5 +1,6 @@
 import numpy as np
 import pygame
+import json
 import math
 import time 
 
@@ -37,20 +38,32 @@ class ParticleSystem:
 
     def __init__(self,rMax,dt,Beta,friction):
 
-        # self.nParticles = nParticles
-        # self.positions  = np.random.rand(nParticles,2)
-        # self.colors     = np.random.randint(0,nColors,size=nParticles)
-        # self.attractionMatrix = np.random.uniform(-1, 1, (nColors,nColors))
         self.rMax = rMax
         self.dt = dt
         self.Beta = Beta
         self.friction = friction
         pass
 
+    def loadSystem(self,pos_x,pos_y,screenDim,fileName):
+
+        with open(fileName, "r") as fp:
+            data = json.load(fp)
+
+        positions = np.array(data['robot'])[:,0:2]
+        print(positions)
+        positions[:,0] = ((positions[:,0] * data['width'])  + pos_x - data['width']/2)  /screenDim
+        positions[:,1] = ((positions[:,1] * data['height']) + pos_y - data['height']/2)  /screenDim
+        self.nParticles = len(positions[:,0])
+
+        self.positions = positions
+        self.colors = np.array(data['robot'][:],dtype=np.int32)[:,2]
+
+        self.attractionMatrix = np.array(data['attraction'])
+        self.velocities = np.zeros((self.nParticles,2))
+
     def generateRandomSystem(self,nParticles,nColors):
         self.nParticles = nParticles
         self.positions  = np.random.rand(nParticles,2)
-        self.velocities = np.zeros((nParticles,2))
         self.colors     = np.random.randint(0,nColors,size=nParticles)
         self.attractionMatrix = np.random.uniform(-1, 1, (nColors,nColors))
         self.velocities = np.zeros((self.nParticles,2))

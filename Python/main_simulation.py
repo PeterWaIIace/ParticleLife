@@ -13,17 +13,16 @@ if __name__=="__main__":
     friction = 0.04
     rMax = 0.5 # max distance
     dt = 0.05
-    nParticles = 100
     nColors = 6
 
     particleSystem = ParticleSystem(rMax=rMax,dt=dt,friction=friction,Beta=Beta)
-    particleSystem.generateRandomSystem(nParticles,nColors)
+    particleSystem.loadSystem(screenDim/2,screenDim/2,screenDim,"particleRobot.json")
 
     for n in range(1000):
         screen.fill((0,0,0))
 
         particleSystem.loop()
-        drawParticles(screen=screen,nParticles=nParticles,colors=particleSystem.colors,positions=particleSystem.positions,screenDim=screenDim)
+        drawParticles(screen=screen,nParticles=particleSystem.nParticles,colors=particleSystem.colors,positions=particleSystem.positions,screenDim=screenDim)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

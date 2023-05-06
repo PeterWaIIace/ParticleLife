@@ -34,7 +34,6 @@ class RobotGenerator:
             "attraction" : self.attraction.tolist(),
             "robot" : self.all_particles
         }
-        print(data_to_save)
         with open("particleRobot.json","w+") as fp:
             json.dump(data_to_save,fp)
 
@@ -157,7 +156,7 @@ if __name__ == "__main__":
         attractionMat.draw(screen,colors,robot)
 
         for particle in robot.all_particles:
-            pygame.draw.circle(screen, colors[particle[2]], center=(particle[0],particle[1]), radius=5)
+            pygame.draw.circle(screen, colors[particle[2]], center=(particle[0]*editorDim + editorPosition_x,particle[1]*editorDim + editorPosition_y), radius=5)
 
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -172,7 +171,7 @@ if __name__ == "__main__":
 
                 # I love ugly oneliners
                 if editorPosition_x < pos_x and pos_x < editorPosition_x + editorDim and editorPosition_y < pos_y and pos_y < editorPosition_y + editorDim:
-                    robot.add_particles(pos_x,pos_y,curr_color)
+                    robot.add_particles((pos_x - editorPosition_x)/(editorDim),(pos_y  - editorPosition_y)/(editorDim),curr_color)
 
             if event.type == pygame.QUIT:
                 pygame.quit()
