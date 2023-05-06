@@ -68,7 +68,20 @@ if __name__=="__main__":
                         pos_y = particle[1]
 
                         if pos_x > square_x and pos_x < square_x + square_width and pos_y > square_y and pos_y < square_y + square_height:
-                            print(pos_x,square_x,pos_y,square_y)
+
+                            particleSystem.velocities[n][0] = 0
+                            particleSystem.velocities[n][1] = 0
+
+                            if abs(pos_x - square_x) > abs(pos_x - (square_x + square_width)):
+                                particleSystem.positions[n][0] += 0.001
+                            elif abs(pos_x - square_x) < abs(pos_x - (square_x + square_width)):
+                                particleSystem.positions[n][0] -= 0.001
+
+                            if abs(pos_y - square_y) > abs(pos_y - (square_y + square_height)):
+                                particleSystem.positions[n][1] += 0.001
+                            elif abs(pos_y - square_y) < abs(pos_y - (square_y + square_height)):
+                                particleSystem.positions[n][1] -= 0.001
+
                             pygame.draw.rect(screen, (50,0,50), pygame.Rect(square_x * screenDim, square_y * screenDim, square_width * screenDim, square_height * screenDim))
 
         particleSystem.updatePositions()
