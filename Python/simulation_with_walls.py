@@ -49,7 +49,7 @@ if __name__=="__main__":
                 square_x = x*square_width
                 square_y = y*square_height
                 if square == "w":
-                    pygame.draw.rect(screen, (10,0,10), pygame.Rect(square_x * screenDim, square_y * screenDim, square_width * screenDim, square_height * screenDim))
+                    pygame.draw.rect(screen, (40,0,40), pygame.Rect(square_x * screenDim, square_y * screenDim, square_width * screenDim, square_height * screenDim))
                 elif square == "s":
                     pygame.draw.rect(screen, (10,10,0), pygame.Rect(square_x * screenDim, square_y * screenDim, square_width * screenDim, square_height * screenDim))
                 elif square == "x":
@@ -82,7 +82,7 @@ if __name__=="__main__":
                             elif abs(pos_y - square_y) < abs(pos_y - (square_y + square_height)):
                                 particleSystem.positions[n][1] -= 0.001
 
-                            pygame.draw.rect(screen, (50,0,50), pygame.Rect(square_x * screenDim, square_y * screenDim, square_width * screenDim, square_height * screenDim))
+                            # pygame.draw.rect(screen, (50,0,50), pygame.Rect(square_x * screenDim, square_y * screenDim, square_width * screenDim, square_height * screenDim))
 
         particleSystem.updatePositions()
         drawParticles(screen=screen,nParticles=particleSystem.nParticles,colors=particleSystem.colors,positions=particleSystem.positions,screenDim=screenDim)
