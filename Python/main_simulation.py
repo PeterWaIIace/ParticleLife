@@ -1,7 +1,6 @@
 from particles import ParticleSystem, drawParticles
 import pygame
 
-
 if __name__=="__main__":
 
     screenDim = 400
@@ -18,7 +17,7 @@ if __name__=="__main__":
     particleSystem = ParticleSystem(rMax=rMax,dt=dt,friction=friction,Beta=Beta)
     particleSystem.loadSystem(screenDim/2,screenDim/2,screenDim,"particleRobot.json")
 
-    for n in range(1000):
+    while True:
         screen.fill((0,0,0))
 
         particleSystem.loop()

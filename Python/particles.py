@@ -11,7 +11,7 @@ COLOR4 = np.array((0, 255, 255))
 COLOR5 = np.array((255, 0, 255))
 COLOR6 = np.array((255, 255, 0))
 
-colorsTable = [BLUE, GREEN, RED,COLOR4 , COLOR5, COLOR6]
+colorsTable = [(255,0,0), (0,255,0), (0,0,255), (255,255,0), (255,0,255), (0,255,255)]
 
 spatialBucket = {}
 
@@ -50,7 +50,7 @@ class ParticleSystem:
             data = json.load(fp)
 
         positions = np.array(data['robot'])[:,0:2]
-        print(positions)
+
         positions[:,0] = ((positions[:,0] * data['width'])  + pos_x - data['width']/2)  /screenDim
         positions[:,1] = ((positions[:,1] * data['height']) + pos_y - data['height']/2)  /screenDim
         self.nParticles = len(positions[:,0])
@@ -69,7 +69,7 @@ class ParticleSystem:
         self.velocities = np.zeros((self.nParticles,2))
 
     # you need to scale center_xy by screen dimension, same with range_xy
-    def generateSpecificSystem(self,positions,coloredParticleList,attractionMatrix):
+    def generateSpecificSystem(self,coloredParticleList,attractionMatrix):
         self.nParticles = len(coloredParticleList)
         self.attractionMatrix = attractionMatrix
         self.colors = coloredParticleList
