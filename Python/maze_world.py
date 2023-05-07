@@ -6,22 +6,20 @@ import time
 
 class MazeWorld:
 
-    def __init__(self):
+    def __init__(self,robotName="particleRobot.json"):
         self.screenDim = 400
-        self.maze = [["w","w","w","w","w"],
-        ["w","w","w","w","w"],
-        ["w","s","x","g","w"],
-        ["w","w","w","w","w"],
-        ["w","w","w","w","w"]]
-
-        pygame.init()
-        self.screen = pygame.display.set_mode((self.screenDim, self.screenDim))
+        self.maze = [["w","w","w","w","w","w","w"],
+                     ["w","w","w","w","w","g","w"],
+                     ["w","w","w","w","w","x","w"],
+                     ["w","s","x","x","x","x","w"],
+                     ["w","w","w","w","w","w","w"],
+                     ["w","w","w","w","w","w","w"],
+                     ["w","w","w","w","w","w","w"]]
 
         Beta = 0.01
         friction = 0.04
         rMax = 0.5 # max distance
         dt = 0.05
-        nColors = 6
 
         square_height = self.screenDim/len(self.maze)
         square_width  = self.screenDim/len(self.maze[0])
@@ -46,7 +44,7 @@ class MazeWorld:
                     self.goal_y = y*self.square_height+ self.square_height/2
 
         self.particleSystem = ParticleSystem(rMax=rMax,dt=dt,friction=friction,Beta=Beta)
-        self.particleSystem.loadSystem(start_x * self.screenDim, start_y * self.screenDim,self.screenDim,"particleRobot.json")
+        self.particleSystem.loadSystem(start_x * self.screenDim, start_y * self.screenDim,self.screenDim,robotName)
 
     def __drawMaze(self):
         for x,squares in enumerate(self.maze):
@@ -98,7 +96,7 @@ class MazeWorld:
         self.score /= len(self.particleSystem.positions)
 
     def silentLoop(self):
-        for _ in range(100):
+        for _ in range(500):
             self.particleSystem.updateVelocities()
             self.__collisions()
             self.particleSystem.updatePositions()
@@ -106,6 +104,9 @@ class MazeWorld:
         self.__score()
 
     def loop(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((self.screenDim, self.screenDim))
+
         for _ in range(10000):
             self.screen.fill((0,0,0))
 
@@ -124,7 +125,6 @@ class MazeWorld:
             pygame.display.update()
 
         self.__score()
-        print(self.score)
         pygame.quit()
 
 

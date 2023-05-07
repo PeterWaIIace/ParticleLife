@@ -27,14 +27,14 @@ class RobotGenerator:
         # if strength < 1.0 and strength > -1.0:
         self.attraction[c1,c2] = strength
 
-    def save(self):
+    def save(self,fileName="particleRobot.json"):
         data_to_save = {
             "width" : self.width,
             "height": self.height,
             "attraction" : self.attraction.tolist(),
             "robot" : self.all_particles
         }
-        with open("particleRobot.json","w+") as fp:
+        with open(fileName,"w+") as fp:
             json.dump(data_to_save,fp)
 
 
