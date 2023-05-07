@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdint.h>
 #include "raylib.h"
 #include "raymath.h"
 double F(float distance,float a, float b);
@@ -13,6 +14,8 @@ class Particle
 
         void addForce(Vector2 otherPostion, float relation);
         void updateVelocity();
+
+        uint32_t getID();
 
         void updatePostion();
         Vector2 getPosition();
@@ -30,15 +33,15 @@ class Particle
     private:
         Vector2 totalForce = {0.0,0.0};
         float boundary[2] = {-1.0,1.0};
-        int hashIndex = 0.0;
-        float dt = 0.02;
-        float rMax   = 1.0;
-        float radius = 1;
-        float y_limit = 1.0;
-        float x_limit = 1.0;
-        float friction = 0.001;
-        float beta = 0.3;
-        float force = 10.0;
+        int hashIndex;
+        float dt;
+        float rMax;
+        float radius;
+        float friction;
+        float beta;
+        float force;
+
+        uint32_t uniqueID;
         Vector2 velocity;
 
 };

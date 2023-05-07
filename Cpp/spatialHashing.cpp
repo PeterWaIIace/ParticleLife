@@ -34,8 +34,8 @@ void SpatialHash::Add(const Particle& particle) {
     int cell_y = int(particle.position.y / cell_size_);
     for (int i = -1; i <= 1; ++i) {
         for (int j = -1; j <= 1; ++j) {
-            int cell_xi = cell_x+i%int(1/cell_size_);
-            int cell_yj = cell_x+j%int(1/cell_size_);
+            int cell_xi = (cell_x+i)%int(1/cell_size_);
+            int cell_yj = (cell_x+j)%int(1/cell_size_);
 
             if(cell_xi < 0)
             {
@@ -45,7 +45,6 @@ void SpatialHash::Add(const Particle& particle) {
             {
                 cell_yj = int(1/cell_size_) - cell_xi;
             }
-
 
             int cell_id = GetCellID(cell_x+i, cell_y+j);
             objects_by_cell_[cell_id].push_back(particle);
@@ -59,7 +58,6 @@ std::vector<Particle>& SpatialHash::GetObjectsInCell(int cell_x, int cell_y) {
 }
 
 void SpatialHash::GetNearby(Particle& particle) const {
-    std::vector<Particle> nearby_objects;
     // std::array<Particle,5000> nearby_objects;
     int cell_x = int(particle.position.x / cell_size_);
     int cell_y = int(particle.position.y / cell_size_);

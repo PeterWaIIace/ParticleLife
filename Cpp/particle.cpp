@@ -17,24 +17,27 @@ double F(float distance,float a, float b)
     }
 }
 
-Particle::Particle(float x, float y, int color)
+Particle::Particle(float x, float y, int color) : uniqueID(reinterpret_cast<uint32_t>(this))
 {
-    this->hashIndex = 0;
-    this->force = 5.0;
+    this->hashIndex = 0.0;
+    this->force = 50.0;
     this->beta = 0.3;
-    this->rMax = 0.05;
-    this->dt   = 0.03;
-    this->friction = 0.04;
+    this->rMax = 0.1;
+    this->dt   = 0.01;
+    this->friction = 0.01;
     this->color = color;
     this->position = { x, y };
-    this->y_limit = y_limit;
-    this->x_limit = x_limit;
     this->velocity = {0.0,0.0};
 }
 
 void Particle::resetForce()
 {
     this->totalForce = {0.0,0.0};
+}
+
+uint32_t Particle::getID()
+{
+    return this->uniqueID;
 }
 
 void Particle::addForce(Vector2 otherPostion, float relation)
@@ -68,26 +71,25 @@ void Particle::updatePostion()
     this->position.x += this->velocity.x * this->dt;
     this->position.y += this->velocity.y * this->dt;
 
-    if(this->position.x < this->boundary[0])
+    if(this->position.x <= this->boundary[0]-0.01)
     {
-        this->position.x = this->boundary[1]-0.001;
+        this->position.x = this->boundary[1];
     }
 
-    if(this->position.y < this->boundary[0])
+    if(this->position.y <= this->boundary[0]-0.01)
     {
-        this->position.y = this->boundary[1]-0.001;
+        this->position.y = this->boundary[1];
     }
 
-    if(this->position.x > this->boundary[1])
+    if(this->position.x > this->boundary[1]+0.01)
     {
-        this->position.x = this->boundary[0]+0.001;
+        this->position.x = this->boundary[0];
     }
 
-    if(this->position.y > this->boundary[1])
+    if(this->position.y > this->boundary[1]+0.01)
     {
-        this->position.y = this->boundary[0]+0.001;
+        this->position.y = this->boundary[0];
     }
-
 
 }
 

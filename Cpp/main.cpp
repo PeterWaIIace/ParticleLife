@@ -16,6 +16,7 @@ extern Color allColors[] = {
     YELLOW     ,     // Yellow
     LIME       ,      // Lime
     DARKGREEN  ,      // Dark Green
+    MAGENTA    ,     // Magenta
     RED        ,     // Red
     SKYBLUE    ,   // Sky Blue
     DARKBLUE   ,      // Dark Blue
@@ -27,7 +28,6 @@ extern Color allColors[] = {
     DARKBROWN  ,      // Dark Brown
     WHITE      ,   // White
     BLANK      ,           // Blank (Transparent)
-    MAGENTA    ,     // Magenta
 };
 
 class ParticleUniverse
@@ -41,8 +41,8 @@ class ParticleUniverse
             for(int i = 0 ; i < nParticles ; i++)
             {
                 this->particles.push_back(Particle(
-                    ((float)this->getRandomInt(0,10000))/10000.0, // X
-                    ((float)this->getRandomInt(0,10000))/10000.0,  // Y
+                    ((float)this->getRandomInt(-10000,10000))/10000.0, // X
+                    ((float)this->getRandomInt(-10000,10000))/10000.0,  // Y
                     this->getRandomInt(0,MAX_COLORS-1)  // COLOR
                 ));
             }
@@ -76,7 +76,7 @@ class ParticleUniverse
             return dist_(gen_);
         }
 
-        SpatialHash spatialHash_{0.05};
+        SpatialHash spatialHash_{0.1};
         int quantization = 2;
         int height = 0;
         int width = 0;
@@ -102,7 +102,7 @@ int main(void)
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
-    ParticleUniverse ParticleUniverse(5000,width, height);
+    ParticleUniverse ParticleUniverse(4000,width, height);
 
     std::cout << "ParticleUniverse generated" << std::endl;
 
@@ -116,10 +116,10 @@ int main(void)
         std::vector<Particle> particles = ParticleUniverse.step();
         for(auto &particle : particles)
         {
-            float x = particle.getPosition().x*width;
-            float y = particle.getPosition().y*height;
+            float x = (particle.getPosition().x+1.0)/2.0*width;
+            float y = (particle.getPosition().y+1.0)/2.0*height;
             DrawCircleGradient(x,y,3,Fade(allColors[particle.color],1),Fade(allColors[particle.color],0.0));
-            DrawCircleGradient(x,y,10,Fade(allColors[particle.color],0.2),Fade(allColors[particle.color],0.0));
+            // DrawCircleGradient(x,y,10,Fade(allColors[particle.color],0.2),Fade(allColors[particle.color],0.0));
         }
 
         EndDrawing();
