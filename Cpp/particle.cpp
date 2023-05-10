@@ -20,7 +20,7 @@ double F(float distance,float a, float b)
 Particle::Particle(float x, float y, int color) : uniqueID(reinterpret_cast<uint32_t>(this))
 {
     this->hashIndex = 0.0;
-    this->force = 50.0;
+    this->force = 25.0;
     this->beta = 0.3;
     this->rMax = 0.1;
     this->dt   = 0.01;
