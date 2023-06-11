@@ -102,7 +102,7 @@ int main(void)
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
-    ParticleUniverse ParticleUniverse(4000,width, height);
+    ParticleUniverse ParticleUniverse(8000,width, height);
 
     std::cout << "ParticleUniverse generated" << std::endl;
 

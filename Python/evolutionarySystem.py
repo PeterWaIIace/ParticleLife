@@ -11,8 +11,8 @@ if __name__ == "__main__":
     genomes = [np.random.randint(low=-36,high=36,size=(nColors*nColors + nParticles)) for _ in  range(nGenomes)]
     scores = np.ones(nGenomes) * 1000
 
-    for _ in range(10):
-
+    for generation in range(30):
+        print(f"generation {generation}")
         for i,genome in enumerate(genomes):
             rGen = RobotGenerator(nColors,40,40)
 

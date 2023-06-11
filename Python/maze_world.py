@@ -9,10 +9,10 @@ class MazeWorld:
     def __init__(self,robotName="particleRobot.json"):
         self.screenDim = 400
         self.maze = [["w","w","w","w","w","w","w"],
-                     ["w","w","w","w","w","g","w"],
-                     ["w","w","w","w","w","x","w"],
-                     ["w","s","x","x","x","x","w"],
-                     ["w","w","w","w","w","w","w"],
+                     ["w","w","w","w","x","x","w"],
+                     ["w","w","w","w","x","x","w"],
+                     ["w","s","x","x","x","g","w"],
+                     ["w","x","x","x","x","x","w"],
                      ["w","w","w","w","w","w","w"],
                      ["w","w","w","w","w","w","w"]]
 
@@ -91,9 +91,11 @@ class MazeWorld:
     def __score(self):
         self.score = 0.0
         for particle in self.particleSystem.positions:
+            for particle2 in self.particleSystem.positions:
+                self.score -= np.linalg.norm(particle2 - particle)
             self.score += np.linalg.norm(np.array([self.goal_x,self.goal_y]) - particle)
 
-        self.score /= len(self.particleSystem.positions)
+        self.score = self.score/len(self.particleSystem.positions)
 
     def silentLoop(self):
         for _ in range(500):
