@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <vector>
 #include <map>
@@ -14,59 +15,14 @@ namespace experimental
     class SpatialHash
     {
         public:
-            SpatialHash(int Nbuckets){
-                // well as it is 2D array, we need buckets^2
-                keys = Nbuckets*Nbuckets;
-                step = 1.0/float(Nbuckets);
-                columns = Nbuckets;
-
-                for(int key = 0 ; key < keys ; key++)
-                {
-                    Element tmp;
-                    std::vector<Element> element(10000,tmp);
-                    buckets[key] = element;
-                    fill[key] = 0;
-                }
-            };
-
-            void insert(Element& el)
-            {
-                int key = getKey(el.x,el.y);
-                if(fill[key] > buckets[key].size())
-                {
-                    buckets[key].reserve(buckets[key].size() + 100);
-                }
-
-                // el.bucketIndex = fill[key];
-                buckets[key][fill[key]] = el;
-                fill[key] += 1;
-            }
-
-            const std::vector<Element> get(Element& el)
-            {
-                int key = getKey(el.x,el.y);
-                if(fill[key] > buckets[key].size())
-                {
-                    buckets[key].reserve(buckets[key].size() + 100);
-                }
-
-                return buckets[key];
-            }
+            SpatialHash(int Nbuckets);
+            void insert(Element& el);
+            const std::vector<Element>& get(Element& el);
 
         private:
 
-            int getKey(float x, float y)
-            {
-               int col = getCell(x);
-               int row = getCell(y);
-               int key = col + row*columns;
-               return key;
-            }
-
-            int getCell(float xy)
-            {
-                return int(xy / step);
-            }
+            int getKey(float x, float y);
+            int getCell(float xy);
 
             int keys;
             int columns;

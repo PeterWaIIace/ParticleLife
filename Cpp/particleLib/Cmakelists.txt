@@ -13,7 +13,8 @@ add_library(particleLib STATIC)
 target_sources(particleLib
     PUBLIC
     particle.cpp
-    spatialHashing.cpp)
+    spatialHashing.cpp
+    spatialHashing_experimental.cpp)
 
 target_include_directories(particleLib
   PUBLIC

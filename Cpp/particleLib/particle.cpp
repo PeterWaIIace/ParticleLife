@@ -96,3 +96,19 @@ void Particle::updatePostion()
 Vector2 Particle::getPosition(){
     return this->position;
 }
+
+
+void experimental::Particle_exp::addForce(Element& otherElement, float relation)
+{
+    xDiff  = otherElement.x - x;
+    yDiff  = otherElement.y - y;
+
+    float r = sqrt(pow(otherElement.x - x,2) + pow(otherElement.y - y,2));
+
+    if(0 < r && r < 10)
+    {
+        float f = F(r/10,relation,0.3);
+        f_x += (otherElement.x - x)/r * 50.0;
+        f_y += (otherElement.y - y)/r * 50.0;
+    }
+}
