@@ -48,3 +48,4 @@ private:
     relationMatrix relations;
     // Particle objects_by_cell_[][][];
 };
+

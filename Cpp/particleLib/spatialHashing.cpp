@@ -66,11 +66,8 @@ void SpatialHash::GetNearby(Particle& particle) const {
     auto it = objects_by_cell_.find(cell_id);
     if (it != objects_by_cell_.end()) {
         for (const Particle& particle2 : it->second) {
-            if(particle != particle2)
-            {
-                float rel = const_cast<relationMatrix&>(relations).getRelation(particle.color,particle2.color);
-                particle.addForce(const_cast<Particle&>(particle2).getPosition(),rel);
-            }
+            float rel = const_cast<relationMatrix&>(relations).getRelation(particle.color,particle2.color);
+            particle.addForce(const_cast<Particle&>(particle2).getPosition(),rel);
         }
     }
 }
