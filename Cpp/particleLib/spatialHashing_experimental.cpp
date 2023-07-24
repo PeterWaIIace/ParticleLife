@@ -20,10 +20,10 @@ namespace experimental
     void SpatialHash::insert(Element& el)
     {
         int key = getKey(el.x,el.y);
-        if(fill[key] > buckets[key].size())
-        {
-            buckets[key].reserve(buckets[key].size() + 100);
-        }
+        // if(fill[key] > buckets[key].size()) [[unlikely]]
+        // {
+        //     buckets[key].reserve(buckets[key].size() + 1000);
+        // }
 
         // el.bucketIndex = fill[key];
         buckets[key][fill[key]] = el;
@@ -33,10 +33,10 @@ namespace experimental
     const std::vector<Element>& SpatialHash::get(Element& el)
     {
         int key = getKey(el.x,el.y);
-        if(fill[key] > buckets[key].size())
-        {
-            buckets[key].reserve(buckets[key].size() + 100);
-        }
+        // if(fill[key] > buckets[key].size()) [[unlikely]]
+        // {
+        //     buckets[key].reserve(buckets[key].size() + 1000);
+        // }
 
         return buckets[key];
     };
