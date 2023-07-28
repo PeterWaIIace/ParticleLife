@@ -94,6 +94,10 @@ class Bucket
         std::vector<Particle>& pop(){
             return frame;
         };
+
+        int size(){
+            return frame.size();
+        };
 };
 class Buckets
 {
@@ -193,8 +197,18 @@ class Buckets
             }
         }
 
-        Iterator begin() { std::cout << "begin" << std::endl;return Iterator(&b__[0][0],this); }
-        Iterator end()   { std::cout << "end" << std::endl; return Iterator(&b__[nBucketsHeight-1][nBucketsWidth-1],this); } // 200 is out of bounds
+        std::vector<int> getBucketsSize(){
+            std::vector<int> sizes;
+            for(int row = 0; row < nBucketsHeight ; row++){
+                for(int col = 0; col < nBucketsWidth ; col++){
+                    sizes.push_back(b__[row][col].size());
+                }
+            }
+            return sizes;
+        };
+
+        Iterator begin() { return Iterator(&b__[0][0],this); }
+        Iterator end()   { return Iterator(&b__[nBucketsHeight-1][nBucketsWidth-1],this); } // 200 is out of bounds
 
         void insert(Particle& particle)
         {
@@ -269,7 +283,6 @@ class ParticleSystem
                     auto particle = frame.front();
                     frame.pop_back();
 
-                    std::cout << frame.size() << " " << neighbors.size() << std::endl;
                     for(auto other : frame)
                     {
                         particle.interact(other);
@@ -282,12 +295,17 @@ class ParticleSystem
                         other.interact(particle);
                     }
 
-                    particle.updateVelocity();
-                    particle.updatePostion();
+                    // particle.updateVelocity();
+                    // particle.updatePostion();
 
                     nextBuckets.insert(particle);
                 }
 
+                for(auto i : buckets.getBucketsSize())
+                {
+                    std::cout << i <<" ";
+                }
+                std::cout << std::endl;
             }
             buckets = nextBuckets;
 
