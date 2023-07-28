@@ -9,7 +9,3 @@ add_executable(
   particleLab
   particle.cpp
 )
-target_link_libraries(
-  particleLab
-)
-

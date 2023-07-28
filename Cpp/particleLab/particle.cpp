@@ -97,13 +97,17 @@ class Bucket
 };
 class Buckets
 {
-    private:
+    public:
         double nHeight = 1.0;
         double nWidth = 1.0;
         double stepHeight = 1.0;
         double stepWidth = 1.0;
-        std::vector<std::vector<Bucket>> b__;
+        int nBucketsHeight = 1;
+        int nBucketsWidth = 1;
+        int interatorIndex = 0;
 
+        std::vector<std::vector<Bucket>> b__;
+    private:
 
         Bucket& chooseBucket(double x, double y)
         {
@@ -117,6 +121,54 @@ class Buckets
             return b__[row][col];
         }
 
+        struct Iterator 
+        {
+            using iterator_category = std::forward_iterator_tag;
+            using difference_type   = std::ptrdiff_t;
+            using value_type        = Bucket;
+            using pointer           = Bucket*;  // or also value_type*
+            using reference         = Bucket&;  // or also value_type&
+
+            Iterator(pointer ptr,Buckets* baseThis) : m_ptr(ptr), m_baseThis(baseThis) {
+                std::cout << "constructing " << m_baseThis << std::endl;
+            }
+
+
+            reference operator*() const { std::cout << "returning pointer " << m_baseThis << std::endl; return *m_ptr; }
+            pointer operator->() { return m_ptr; }
+
+            // Prefix increment
+            Iterator& operator++() {
+                m_baseThis->interatorIndex++;
+                int row = m_baseThis->interatorIndex/m_baseThis->nBucketsWidth;
+                int col = m_baseThis->interatorIndex%m_baseThis->nBucketsWidth;
+                std::cout << row << col << std::endl;
+                m_ptr = &(m_baseThis->b__[row][col]);
+                if(m_baseThis->interatorIndex > m_baseThis->nBucketsWidth*m_baseThis->nBucketsHeight) m_baseThis->interatorIndex = 0;
+                return *this;
+            }
+
+            // Postfix increment
+            Iterator operator++(int) {
+                int row = m_baseThis->interatorIndex/m_baseThis->nBucketsWidth;
+                int col = m_baseThis->interatorIndex%m_baseThis->nBucketsWidth;
+                m_ptr = &(m_baseThis->b__[row][col]);
+                m_baseThis->interatorIndex++;
+                if(m_baseThis->interatorIndex > m_baseThis->nBucketsWidth*m_baseThis->nBucketsHeight) m_baseThis->interatorIndex = 0;
+                return *this;
+            }
+
+            friend bool operator== (const Iterator& a, const Iterator& b) { return a.m_ptr == b.m_ptr; };
+            friend bool operator!= (const Iterator& a, const Iterator& b) { return a.m_ptr != b.m_ptr; };
+
+        private:
+
+            pointer m_ptr;
+            Buckets* m_baseThis;
+
+        };
+
+
     public:
         Buckets(Buckets& other)
         {
@@ -129,8 +181,8 @@ class Buckets
         {
             stepHeight = 1.0/nHeight;
             stepWidth = 1.0/nWidth;
-            int nBucketsHeight = 1.0/nHeight;
-            int nBucketsWidth  = 1.0/nWidth;
+            nBucketsHeight = 1.0/nHeight;
+            nBucketsWidth  = 1.0/nWidth;
 
             for(int n = 0 ; n < nBucketsHeight ; n++)
             {
@@ -142,6 +194,9 @@ class Buckets
                 }
             }
         }
+
+        Iterator begin() { std::cout << "begin" << std::endl;return Iterator(&b__[0][0],this); }
+        Iterator end()   { std::cout << "end" << std::endl; return Iterator(&b__[nBucketsHeight-1][nBucketsWidth-1],this); } // 200 is out of bounds
 
         void insert(Particle& particle)
         {
@@ -199,10 +254,14 @@ class ParticleSystem
 
         void run()
         {
+            for(auto& bucket : buckets)
+            {
+                std::cout << bucket.pop().size() << std::endl;
+            }
+
             auto frame = buckets.getBucket(0,0);
             auto neighbors = buckets.getSurroundingBuckets(0,0);
 
-            std::cout << "frame.size: " << frame.size() << " neighbors.size: " << neighbors.size() << std::endl;
             while(frame.size() > 0)
             {
                 auto particle = frame.front();
