@@ -133,16 +133,14 @@ class Buckets
                 std::cout << "constructing " << m_baseThis << std::endl;
             }
 
-
-            reference operator*() const { std::cout << "returning pointer " << m_baseThis << std::endl; return *m_ptr; }
-            pointer operator->() { return m_ptr; }
+            std::pair<pointer,std::vector<Particle>> operator*() const {  return std::make_pair(m_ptr,m_baseThis->getSurroundingBuckets()); }
+            std::pair<pointer,std::vector<Particle>> operator->() { return std::make_pair(m_ptr,m_baseThis->getSurroundingBuckets()); }
 
             // Prefix increment
             Iterator& operator++() {
                 m_baseThis->interatorIndex++;
                 int row = m_baseThis->interatorIndex/m_baseThis->nBucketsWidth;
                 int col = m_baseThis->interatorIndex%m_baseThis->nBucketsWidth;
-                std::cout << row << col << std::endl;
                 m_ptr = &(m_baseThis->b__[row][col]);
                 if(m_baseThis->interatorIndex > m_baseThis->nBucketsWidth*m_baseThis->nBucketsHeight) m_baseThis->interatorIndex = 0;
                 return *this;
@@ -210,6 +208,13 @@ class Buckets
             return b__[i][j].pop();
         }
 
+        std::vector<Particle> getSurroundingBuckets()
+        {
+            int row = interatorIndex/nBucketsWidth;
+            int col = interatorIndex%nBucketsWidth;
+            return getSurroundingBuckets(row,col);
+        }
+
         std::vector<Particle> getSurroundingBuckets(int i , int j)
         {
             std::vector<Particle> neighbors;
@@ -220,7 +225,7 @@ class Buckets
                     int row = i + m;
                     int col = j + m;
 
-                    if(row >= 0 && col >= 0 && row != i && col != j)
+                    if(row >= 0 && col >= 0 && row != i && col != j && row < nBucketsHeight && col < nBucketsWidth)
                     {
                         neighbors.insert(neighbors.end(),b__[row][col].pop().begin(),b__[row][col].pop().end());
                     }
@@ -256,35 +261,34 @@ class ParticleSystem
         {
             for(auto& bucket : buckets)
             {
-                std::cout << bucket.pop().size() << std::endl;
-            }
+                auto frame = bucket.first->pop();
+                auto neighbors = bucket.second;
 
-            auto frame = buckets.getBucket(0,0);
-            auto neighbors = buckets.getSurroundingBuckets(0,0);
-
-            while(frame.size() > 0)
-            {
-                auto particle = frame.front();
-                frame.pop_back();
-
-                for(auto other : frame)
+                while(frame.size() > 0)
                 {
-                    particle.interact(other);
-                    other.interact(particle);
+                    auto particle = frame.front();
+                    frame.pop_back();
+
+                    std::cout << frame.size() << " " << neighbors.size() << std::endl;
+                    for(auto other : frame)
+                    {
+                        particle.interact(other);
+                        other.interact(particle);
+                    }
+
+                    for(auto other : neighbors)
+                    {
+                        particle.interact(other);
+                        other.interact(particle);
+                    }
+
+                    particle.updateVelocity();
+                    particle.updatePostion();
+
+                    nextBuckets.insert(particle);
                 }
 
-                for(auto other : neighbors)
-                {
-                    particle.interact(other);
-                    other.interact(particle);
-                }
-
-                particle.updateVelocity();
-                particle.updatePostion();
-
-                nextBuckets.insert(particle);
             }
-
             buckets = nextBuckets;
 
         }
