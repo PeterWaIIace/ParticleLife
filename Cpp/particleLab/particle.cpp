@@ -27,12 +27,11 @@ double F(float distance,float a, float b)
 }
 
 class Particle{
-    // MOCK
 
     public:
         double x, y;
         double v_x = 0.0, v_y = 0.0;
-        double f_x ,f_y;
+        double f_x = 0.0 ,f_y = 0.0;
         double dt = 0.0001;
         double friction = 0.01;
         double rMax = 0.1;
@@ -395,8 +394,19 @@ int main(int argc, char* argv[])
 
     timeit([&system](){
         system.step();
-    });
 
+    });
     std::cout << system.getParticles().size() << std::endl;
+
+    // Particle el1(0.01,0.01);
+    // Particle el2(0.01,0.011);
+
+    // std::cout << " el1.x: " << el1.x << " el1.y: " << el1.y << std::endl;
+    // std::cout << " el2.x: " << el2.x << " el2.y: " << el2.y << std::endl;
+    // el1.interact(el2);
+    // el1.updateVelocity();
+    // el1.updatePostion();
+
+    // std::cout << " el1.x: " << el1.x << " el1.y: " << el1.y << std::endl;
     return 0;
 }
