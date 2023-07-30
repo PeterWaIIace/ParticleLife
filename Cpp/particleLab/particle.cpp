@@ -33,10 +33,10 @@ class Particle{
         double x, y;
         double v_x = 0.0, v_y = 0.0;
         double f_x ,f_y;
-        double dt = 0.1;
+        double dt = 0.0001;
         double friction = 0.01;
-        double rMax = 10.0;
-        double force = 50.0;
+        double rMax = 0.1;
+        double force = 1.0;
         double beta = 0.3;
 
         Particle(double x, double y)
@@ -50,11 +50,11 @@ class Particle{
 
             float r = sqrt(pow(other.x - x,2) + pow(other.y - y,2));
 
-            if(0 < r && r < 10)
+            if(0 < r && r < rMax)
             {
                 float f = F(r/rMax,relation,0.3);
-                f_x += (other.x - x)/r * 50.0;
-                f_y += (other.y - y)/r * 50.0;
+                f_x += ((other.x - x)/r) * force;
+                f_y += ((other.y - y)/r) * force;
             }
         };
 
@@ -75,6 +75,27 @@ class Particle{
         {
             x += v_x * dt;
             y += v_y * dt;
+
+            if(x < 0.0)
+            {
+                x = 0.001;
+            }
+
+            if(y < 0.0)
+            {
+                y = 0.001;
+            }
+
+            if(x > 1.0)
+            {
+                x = 1.0 - 0.001;
+            }
+
+            if(y > 1.0)
+            {
+                y = 1.0 - 0.001;
+            }
+
         }
 
 };
@@ -83,11 +104,14 @@ class Particle{
 class Bucket
 {
     private:
-        int row = 0;
-        int col = 0;
         std::vector<Particle> frame;
         std::shared_ptr<std::vector<Particle>> framePtr = std::make_shared<std::vector<Particle>>(frame);
     public:
+        int row = 0;
+        int col = 0;
+
+        Bucket(int row, int col): row(row), col(col) {};
+
         void insert(Particle& particle)
         {
             framePtr ->push_back(particle);
@@ -136,7 +160,7 @@ class Buckets
 
             Iterator(pointer ptr,Buckets* baseThis) : m_ptr(ptr), m_baseThis(baseThis) {}
 
-            std::pair<pointer,std::vector<Particle>> operator*() const {  return std::make_pair(m_ptr,m_baseThis->getSurroundingBuckets()); }
+            std::pair<pointer,std::vector<Particle>> operator*() const { return std::make_pair(m_ptr,m_baseThis->getSurroundingBuckets()); }
             std::pair<pointer,std::vector<Particle>> operator->(){ return std::make_pair(m_ptr,m_baseThis->getSurroundingBuckets()); }
 
             // Prefix increment
@@ -145,7 +169,11 @@ class Buckets
                 int row = m_baseThis->interatorIndex/m_baseThis->nBucketsWidth;
                 int col = m_baseThis->interatorIndex%m_baseThis->nBucketsWidth;
                 m_ptr = &(m_baseThis->b__[row][col]);
-                if(m_baseThis->interatorIndex > m_baseThis->nBucketsWidth*m_baseThis->nBucketsHeight) m_baseThis->interatorIndex = 0;
+
+                if(m_baseThis->interatorIndex >= m_baseThis->nBucketsWidth*m_baseThis->nBucketsHeight)
+                {
+                    m_baseThis->interatorIndex = 0;
+                }
                 return *this;
             }
 
@@ -155,7 +183,10 @@ class Buckets
                 int col = m_baseThis->interatorIndex%m_baseThis->nBucketsWidth;
                 m_ptr = &(m_baseThis->b__[row][col]);
                 m_baseThis->interatorIndex++;
-                if(m_baseThis->interatorIndex > m_baseThis->nBucketsWidth*m_baseThis->nBucketsHeight) m_baseThis->interatorIndex = 0;
+                if(m_baseThis->interatorIndex >= m_baseThis->nBucketsWidth*m_baseThis->nBucketsHeight)
+                {
+                    m_baseThis->interatorIndex = 0;
+                }
                 return *this;
             }
 
@@ -192,23 +223,28 @@ class Buckets
 
                 for(int i = 0 ; i < nBucketsWidth ; i++)
                 {
-                    b__[n].push_back(Bucket());
+                    b__[n].push_back(Bucket(b__[n].size(),b__.size()));
                 }
             }
+
+            // adding end empty element
+            b__.push_back(std::vector<Bucket>());
+            b__[b__.size()-1].push_back(Bucket(b__[b__.size()-1].size(),b__.size()));
         }
 
         std::vector<int> getBucketsSize(){
             std::vector<int> sizes;
             for(int row = 0; row < nBucketsHeight ; row++){
                 for(int col = 0; col < nBucketsWidth ; col++){
-                    sizes.push_back(b__[row][col].size());
+                    auto s = b__[row][col].size();
+                    sizes.push_back(s);
                 }
             }
             return sizes;
         };
 
         Iterator begin() { return Iterator(&b__[0][0],this); }
-        Iterator end()   { return Iterator(&b__[nBucketsHeight-1][nBucketsWidth-1],this); } // 200 is out of bounds
+        Iterator end()   { return Iterator(&b__[b__.size()-1][b__[b__.size()-1].size()-1],this); } // 200 is out of bounds
 
         void insert(Particle& particle)
         {
@@ -247,6 +283,19 @@ class Buckets
             }
             return neighbors;
         }
+
+        std::vector<Particle> getAllBuckets()
+        {
+            std::vector<Particle> neighbors;
+            for(int col = 0 ; col < nBucketsWidth ; col++)
+            {
+                for(int row = 0 ; row < nBucketsHeight ; row++)
+                {
+                    neighbors.insert(neighbors.end(),b__[row][col].pop()->begin(),b__[row][col].pop()->end());
+                }
+            }
+            return neighbors;
+        }
 };
 
 class ParticleSystem
@@ -272,10 +321,15 @@ class ParticleSystem
             }
         }
 
-        void run()
+        void step()
         {
+            int count =  0;
+            int countBuckets = 0;
+
             for(auto& bucket : buckets)
             {
+
+                countBuckets++;
                 auto frame =  bucket.first->pop();
 
                 auto neighbors = bucket.second;
@@ -301,6 +355,7 @@ class ParticleSystem
                     particle.updatePostion();
 
                     nextBuckets.insert(particle);
+                    count++;
                 }
 #ifdef DEBUG
                 for(auto sizes : buckets.getBucketsSize())
@@ -310,9 +365,15 @@ class ParticleSystem
                 std::cout << std::endl;
 #endif
             }
-            buckets = nextBuckets;
 
+            buckets = nextBuckets;
+            nextBuckets = Buckets(0.1,0.1);
         }
+
+        std::vector<Particle> getParticles(){
+
+            return buckets.getAllBuckets();
+        };
 };
 
 void timeit(std::function<void(void)> fn)
@@ -329,7 +390,13 @@ int main(int argc, char* argv[])
     ParticleSystem system;
     system.init(10000);
     timeit([&system](){
-        system.run();
+        system.step();
     });
+
+    timeit([&system](){
+        system.step();
+    });
+
+    std::cout << system.getParticles().size() << std::endl;
     return 0;
 }
