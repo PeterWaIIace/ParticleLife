@@ -9,3 +9,8 @@ add_executable(
   particleLab
   particle.cpp
 )
+
+target_include_directories(particleLab
+  PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
