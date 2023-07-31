@@ -3,7 +3,7 @@
 int main(int argc, char* argv[])
 {
     ParticleSystem system;
-    system.init(10000);
+    system.init(5);
     timeit([&system](){
         system.step();
     });

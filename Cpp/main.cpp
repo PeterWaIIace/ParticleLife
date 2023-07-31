@@ -8,7 +8,7 @@ int main(void)
     std::cout << "starting" << std::endl;
 
     ParticleSystem system;
-    system.init(10000);
+    system.init(100);
 
     int width  = 1000;
     int height = 1000;
@@ -31,7 +31,7 @@ int main(void)
         {
             float x = (particle.x)*width;
             float y = (particle.y)*height;
-            DrawCircleGradient(x,y,3,Fade(BLUE,1),Fade(BLUE,0.0));
+            DrawCircleGradient(x,y,3,Fade(BLUE,1),Fade(BLUE,1));
             // DrawCircleGradient(x,y,10,Fade(allColors[particle.color],0.2),Fade(allColors[particle.color],0.0));
         }
 

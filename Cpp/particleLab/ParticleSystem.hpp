@@ -6,6 +6,7 @@
 #include <chrono>
 #include <iostream>
 #include <random>
+#include <math.h>
 
 using namespace std::chrono;
 
@@ -31,7 +32,7 @@ class Particle{
         double x, y;
         double v_x = 0.0, v_y = 0.0;
         double f_x = 0.0 ,f_y = 0.0;
-        double dt = 0.0001;
+        double dt = 0.01;
         double friction = 0.01;
         double rMax = 0.1;
         double force = 10.0;
@@ -41,6 +42,9 @@ class Particle{
         {
             this->x = x;
             this->y = y;
+#ifdef DEBUG 
+            std::cout <<"[" << this << "] this->x: " << this->x << " this->y: " << this->y << std::endl;
+#endif
         }
 
         void interact(Particle& other){
@@ -51,8 +55,8 @@ class Particle{
             if(0 < r && r < rMax)
             {
                 float f = F(r/rMax,relation,0.3);
-                f_x += ((other.x - x)/r) * force;
-                f_y += ((other.y - y)/r) * force;
+                f_x += ((other.x - x)/r) * f;
+                f_y += ((other.y - y)/r) * f;
             }
         };
 
@@ -71,6 +75,9 @@ class Particle{
 
         void Particle::updatePostion()
         {
+#ifdef DEBUG
+            std::cout <<"[" << this << "] Before this->x: " << this->x << " this->y: " << this->y << std::endl;
+#endif
             x += v_x * dt;
             y += v_y * dt;
 
@@ -93,7 +100,9 @@ class Particle{
             {
                 y = 1.0 - 0.001;
             }
-
+#ifdef DEBUG
+            std::cout <<"[" << this << "] After this->x: " << this->x << " this->y: " << this->y << std::endl;
+#endif
         }
 
 };
@@ -145,6 +154,12 @@ class Buckets
 
             int row = int(x*stepHeight);
             int col = int(y*stepWidth);
+
+            for(int i = 0 ; i < b__.size() ; i++){
+                for(int j = 0 ; j < b__[i].size() ; j++){
+                }
+            }
+
             return b__[row][col];
         }
 
@@ -210,10 +225,10 @@ class Buckets
 
         Buckets(double nHeight = 1.0,double nWidth = 1.0)
         {
-            stepHeight = 1.0/nHeight;
-            stepWidth = 1.0/nWidth;
-            nBucketsHeight = 1.0/nHeight;
-            nBucketsWidth  = 1.0/nWidth;
+            stepHeight =ceil(1.0/nHeight);
+            stepWidth = ceil(1.0/nWidth);
+            nBucketsHeight = ceil(1.0/nHeight);
+            nBucketsWidth  = ceil(1.0/nWidth);
 
             for(int n = 0 ; n < nBucketsHeight ; n++)
             {
@@ -268,12 +283,12 @@ class Buckets
             std::vector<Particle> neighbors;
             for(int n = -1 ; n <= 1 ; n++)
             {
+                int row = i + n;
                 for(int m = -1 ; m <= 1 ; m++)
                 {
-                    int row = i + m;
                     int col = j + m;
 
-                    if(row >= 0 && col >= 0 && row != i && col != j && row < nBucketsHeight && col < nBucketsWidth)
+                    if((row >= 0 && col >= 0) && ( row != i || col != j )  && (row < nBucketsHeight && col < nBucketsWidth) )
                     {
                         neighbors.insert(neighbors.end(),b__[row][col].pop()->begin(),b__[row][col].pop()->end());
                     }
@@ -301,8 +316,10 @@ class ParticleSystem
     private:
         // std::vector<Particle> frame;
         // std::vector<Particle> nextFrame;
-        Buckets buckets = Buckets(0.1,0.1);
-        Buckets nextBuckets = Buckets(0.1,0.1);
+
+        float bucketSize = 0.1;
+        Buckets buckets = Buckets(bucketSize,bucketSize);
+        Buckets nextBuckets = Buckets(bucketSize,bucketSize);
 
     public:
         void init(int initSize = 10000)
@@ -334,7 +351,7 @@ class ParticleSystem
 
                 while(frame->size() > 0)
                 {
-                    auto particle = frame->front();
+                    auto particle = frame->back();
                     frame->pop_back();
 
                     for(auto other : *frame)
@@ -364,8 +381,9 @@ class ParticleSystem
 #endif
             }
 
+            // std::cout << "countBuckers: " << countBuckets << std::endl;
             buckets = nextBuckets;
-            nextBuckets = Buckets(0.1,0.1);
+            nextBuckets = Buckets(bucketSize,bucketSize);
         }
 
         std::vector<Particle> getParticles(){
