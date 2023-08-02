@@ -16,12 +16,12 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(
   perf_test
-  perf_test.cpp
+  SystemTests.cpp
+  ../particleLab/ParticleSystem.hpp
 )
 target_link_libraries(
   perf_test
   GTest::gtest_main
-  particleLib
 )
 
 include(GoogleTest)

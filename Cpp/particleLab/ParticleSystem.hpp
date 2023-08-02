@@ -225,10 +225,10 @@ class Buckets
 
         Buckets(double nHeight = 1.0,double nWidth = 1.0)
         {
-            stepHeight =ceil(1.0/nHeight);
-            stepWidth = ceil(1.0/nWidth);
-            nBucketsHeight = ceil(1.0/nHeight);
-            nBucketsWidth  = ceil(1.0/nWidth);
+            stepHeight =round(1.0/nHeight);
+            stepWidth = round(1.0/nWidth);
+            nBucketsHeight = round(1.0/nHeight);
+            nBucketsWidth  = round(1.0/nWidth);
 
             for(int n = 0 ; n < nBucketsHeight ; n++)
             {
