@@ -47,29 +47,29 @@ class Particle{
 #endif
         }
 
-        void interact(Particle& other){
-            double relation = 1.0;
+        void interact(Particle& other,std::function<void(Particle&,Particle&)> interact__){
+            interact__(*this,other);
+            // float r = sqrt(pow(other.x - x,2) + pow(other.y - y,2));
 
-            float r = sqrt(pow(other.x - x,2) + pow(other.y - y,2));
-
-            if(0 < r && r < rMax)
-            {
-                float f = F(r/rMax,relation,0.3);
-                f_x += ((other.x - x)/r) * f;
-                f_y += ((other.y - y)/r) * f;
-            }
+            // if(0 < r && r < rMax)
+            // {
+            //     float f = F(r/rMax,relation,0.3);
+            //     f_x += ((other.x - x)/r) * f;
+            //     f_y += ((other.y - y)/r) * f;
+            // }
         };
 
-        void Particle::updateVelocity()
+        void Particle::updateVelocity(std::function<void(Particle&)> updateVelocity__)
         {
-            f_x *= rMax * force;
-            f_y *= rMax * force;
+            updateVelocity__(*this);
+            // f_x *= rMax * force;
+            // f_y *= rMax * force;
 
-            v_x *= friction;
-            v_y *= friction;
+            // v_x *= friction;
+            // v_y *= friction;
 
-            v_x += f_x * dt;
-            v_y += f_y * dt;
+            // v_x += f_x * dt;
+            // v_y += f_y * dt;
         }
 
 
@@ -223,12 +223,12 @@ class Buckets
 
         }
 
-        Buckets(double nHeight = 1.0,double nWidth = 1.0)
+        Buckets(int nHeight = 1,int nWidth = 1)
         {
-            stepHeight =round(1.0/nHeight);
-            stepWidth = round(1.0/nWidth);
-            nBucketsHeight = round(1.0/nHeight);
-            nBucketsWidth  = round(1.0/nWidth);
+            stepHeight = 1.0/(double)(nHeight);
+            stepWidth  = 1.0/(double)(nWidth);
+            nBucketsHeight = nHeight;
+            nBucketsWidth  = nWidth;
 
             for(int n = 0 ; n < nBucketsHeight ; n++)
             {
@@ -317,7 +317,7 @@ class ParticleSystem
         // std::vector<Particle> frame;
         // std::vector<Particle> nextFrame;
 
-        float bucketSize = 0.1;
+        int bucketSize = 5;
         Buckets buckets = Buckets(bucketSize,bucketSize);
         Buckets nextBuckets = Buckets(bucketSize,bucketSize);
 
@@ -336,7 +336,7 @@ class ParticleSystem
             }
         }
 
-        void step()
+        void step(std::function<void(Particle&,Particle&)> interact__,std::function<void(Particle&)> updateVelocity__)
         {
             int count =  0;
             int countBuckets = 0;
@@ -356,17 +356,17 @@ class ParticleSystem
 
                     for(auto other : *frame)
                     {
-                        particle.interact(other);
-                        other.interact(particle);
+                        particle.interact(other,interact__);
+                        other.interact(particle,interact__);
                     }
 
                     for(auto other : neighbors)
                     {
-                        particle.interact(other);
-                        other.interact(particle);
+                        particle.interact(other,interact__);
+                        other.interact(particle,interact__);
                     }
 
-                    particle.updateVelocity();
+                    particle.updateVelocity(updateVelocity__);
                     particle.updatePostion();
 
                     nextBuckets.insert(particle);
