@@ -16,6 +16,10 @@ int main(int argc, char* argv[])
                     float f = F(r/main.rMax,relation,0.3);
                     main.f_x += ((other.x - main.x)/r) * f;
                     main.f_y += ((other.y - main.y)/r) * f;
+
+                    // do same for other particle so it gets update anyway
+                    other.f_x += ((main.x - other.x)/r) * f;
+                    other.f_y += ((main.y - other.y)/r) * f;
                 }
             },
             // Step2 Update its velocity

@@ -357,13 +357,11 @@ class ParticleSystem
                     for(auto other : *frame)
                     {
                         particle.interact(other,interact__);
-                        other.interact(particle,interact__);
                     }
 
                     for(auto other : neighbors)
                     {
                         particle.interact(other,interact__);
-                        other.interact(particle,interact__);
                     }
 
                     particle.updateVelocity(updateVelocity__);
