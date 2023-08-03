@@ -47,7 +47,7 @@ class Particle{
 #endif
         }
 
-        void interact(Particle& other,void interact__(Particle&,Particle&)){
+        void interact(Particle& other,void (interact__)(Particle&,Particle&)){
             interact__(*this,other);
             // float r = sqrt(pow(other.x - x,2) + pow(other.y - y,2));
 
@@ -59,7 +59,7 @@ class Particle{
             // }
         };
 
-        void Particle::updateVelocity(std::function<void(Particle&)> updateVelocity__)
+        void Particle::updateVelocity(void (updateVelocity__)(Particle&))
         {
             updateVelocity__(*this);
             // f_x *= rMax * force;
