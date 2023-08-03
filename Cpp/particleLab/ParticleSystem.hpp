@@ -47,7 +47,7 @@ class Particle{
 #endif
         }
 
-        void interact(Particle& other,std::function<void(Particle&,Particle&)> interact__){
+        void interact(Particle& other,void interact__(Particle&,Particle&)){
             interact__(*this,other);
             // float r = sqrt(pow(other.x - x,2) + pow(other.y - y,2));
 
@@ -336,7 +336,7 @@ class ParticleSystem
             }
         }
 
-        void step(std::function<void(Particle&,Particle&)> interact__,std::function<void(Particle&)> updateVelocity__)
+        void step(void (interact__)(Particle&,Particle&),void (updateVelocity__)(Particle&))
         {
             int count =  0;
             int countBuckets = 0;
