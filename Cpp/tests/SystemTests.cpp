@@ -1,6 +1,7 @@
 #include "../particleLab/ParticleSystem.hpp"
 #include <gtest/gtest.h>
 #include <chrono>
+#include <random>
 #include <future>
 
 TEST(Buckets, Init5x5) {
@@ -33,4 +34,29 @@ TEST(Buckets, Init1x1) {
 
     ASSERT_EQ(buckets.nBucketsHeight,1);
     ASSERT_EQ(buckets.nBucketsWidth,1);
+}
+
+
+TEST(Buckets, Load2x2) {
+    float bucketSize = 2;
+    Buckets buckets = Buckets(bucketSize,bucketSize);
+
+    // TODO: prepare loading for bucket of that size
+    int initSize = 20;
+    double lower_bound = 0.0;
+    double upper_bound = 1.0;
+
+    std::uniform_real_distribution<double> unif(lower_bound,upper_bound);
+    std::default_random_engine re;
+
+    for(int i = 0 ; i < initSize ; i++)
+    {
+        buckets.insert(Particle(unif(re),unif(re)));
+    }
+
+    for(auto sizes : buckets.getBucketsSize())
+    {
+        // check if there are at least 2 particles in each bucket
+        ASSERT_GE(sizes,2);
+    }
 }

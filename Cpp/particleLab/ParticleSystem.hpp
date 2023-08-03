@@ -152,8 +152,8 @@ class Buckets
             if(x > 1.0) x = 1.0;
             if(y > 1.0) y = 1.0;
 
-            int row = int(x*stepHeight);
-            int col = int(y*stepWidth);
+            int row = int(x/stepHeight);
+            int col = int(y/stepWidth);
 
             for(int i = 0 ; i < b__.size() ; i++){
                 for(int j = 0 ; j < b__[i].size() ; j++){
