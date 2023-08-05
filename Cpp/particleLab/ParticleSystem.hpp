@@ -7,6 +7,8 @@
 #include <iostream>
 #include <random>
 #include <math.h>
+#include <mutex>
+#include <queue>
 
 using namespace std::chrono;
 
@@ -47,29 +49,49 @@ class Particle{
 #endif
         }
 
+        // void interact(Particle& other,std::function<void(Particle&,Particle&)> interact__){
+        //     interact__(*this,other);
+        // };
+
         void interact(Particle& other,void (interact__)(Particle&,Particle&)){
             interact__(*this,other);
-            // float r = sqrt(pow(other.x - x,2) + pow(other.y - y,2));
-
-            // if(0 < r && r < rMax)
-            // {
-            //     float f = F(r/rMax,relation,0.3);
-            //     f_x += ((other.x - x)/r) * f;
-            //     f_y += ((other.y - y)/r) * f;
-            // }
         };
+
+        void interact(Particle& other){
+            float relation = 1.0;
+            float r = sqrt(pow(other.x - x,2) + pow(other.y - y,2));
+
+            if(0 < r && r < rMax)
+            {
+                float f = F(r/rMax,relation,0.3);
+                f_x += ((other.x - x)/r) * f;
+                f_y += ((other.y - y)/r) * f;
+
+                other.f_x += ((x - other.x)/r) * f;
+                other.f_y += ((y - other.y)/r) * f;
+            }
+        };
+
+        // void Particle::updateVelocity(std::function<void(Particle&)> updateVelocity__)
+        // {
+        //     updateVelocity__(*this);
+        // }
 
         void Particle::updateVelocity(void (updateVelocity__)(Particle&))
         {
             updateVelocity__(*this);
-            // f_x *= rMax * force;
-            // f_y *= rMax * force;
+        }
 
-            // v_x *= friction;
-            // v_y *= friction;
+        void Particle::updateVelocity()
+        {
+            f_x *= rMax * force;
+            f_y *= rMax * force;
 
-            // v_x += f_x * dt;
-            // v_y += f_y * dt;
+            v_x *= friction;
+            v_y *= friction;
+
+            v_x += f_x * dt;
+            v_y += f_y * dt;
         }
 
 
@@ -271,14 +293,14 @@ class Buckets
             return b__[i][j].pop();
         }
 
-        std::vector<Particle> getSurroundingBuckets()
+        std::vector<Particle>& getSurroundingBuckets()
         {
             int row = interatorIndex/nBucketsWidth;
             int col = interatorIndex%nBucketsWidth;
             return getSurroundingBuckets(row,col);
         }
 
-        std::vector<Particle> getSurroundingBuckets(int i , int j)
+        std::vector<Particle>& getSurroundingBuckets(int i , int j)
         {
             std::vector<Particle> neighbors;
             for(int n = -1 ; n <= 1 ; n++)
@@ -297,7 +319,7 @@ class Buckets
             return neighbors;
         }
 
-        std::vector<Particle> getAllBuckets()
+        std::vector<Particle>& getAllBuckets()
         {
             std::vector<Particle> neighbors;
             for(int col = 0 ; col < nBucketsWidth ; col++)
@@ -318,6 +340,8 @@ class ParticleSystem
         // std::vector<Particle> nextFrame;
 
         int bucketSize = 5;
+        std::mutex g_bucket_mutex;
+
         Buckets buckets = Buckets(bucketSize,bucketSize);
         Buckets nextBuckets = Buckets(bucketSize,bucketSize);
 
@@ -336,6 +360,11 @@ class ParticleSystem
             }
         }
 
+        void process()
+        {
+
+        }
+
         void step(void (interact__)(Particle&,Particle&),void (updateVelocity__)(Particle&))
         {
             int count =  0;
@@ -343,33 +372,46 @@ class ParticleSystem
 
             for(auto& bucket : buckets)
             {
-
                 countBuckets++;
-                auto frame =  bucket.first->pop();
 
+                auto frame =  bucket.first->pop();
                 auto neighbors = bucket.second;
 
                 while(frame->size() > 0)
                 {
+                    g_bucket_mutex.lock();
+
+                    // catch it in case it was zeroed in race condition
+                    if(!(frame->size() > 0)){
+                        g_bucket_mutex.unlock();
+                        break;
+                    }
+
                     auto particle = frame->back();
                     frame->pop_back();
+                    g_bucket_mutex.unlock();
+
 
                     for(auto other : *frame)
                     {
-                        particle.interact(other,interact__);
+                        // particle.interact(other,interact__);
+                        particle.interact(other);
                     }
 
                     for(auto other : neighbors)
                     {
-                        particle.interact(other,interact__);
+                        // particle.interact(other,interact__);
+                        particle.interact(other);
                     }
 
-                    particle.updateVelocity(updateVelocity__);
+                    // particle.updateVelocity(updateVelocity__);
+                    particle.updateVelocity();
                     particle.updatePostion();
 
                     nextBuckets.insert(particle);
                     count++;
                 }
+
 #ifdef DEBUG
                 for(auto sizes : buckets.getBucketsSize())
                 {
@@ -383,6 +425,48 @@ class ParticleSystem
             buckets = nextBuckets;
             nextBuckets = Buckets(bucketSize,bucketSize);
         }
+
+
+        void step_MT()
+        {
+            std::queue<std::pair<Particle,std::vector<Particle>>> workload;
+            // prepare workload
+            for(auto& bucket : buckets)
+            {
+
+                auto frame =  bucket.first->pop();
+
+                while(frame->size() > 0)
+                {
+                    workload.push(std::make_pair(frame->back(),bucket.second));
+                    frame->pop_back();
+
+                }
+
+            }
+
+            // Pass workload to threadPool 
+            // TASK:
+            [&workload](){
+                auto work = workload.pop();
+
+                for(auto other : work.second)
+                {
+                    work.first.interact(other);
+                }
+
+                particle.updateVelocity();
+                particle.updatePostion();
+            }
+
+
+            // wait for results
+
+            // std::cout << "countBuckers: " << countBuckets << std::endl;
+            buckets = nextBuckets;
+            nextBuckets = Buckets(bucketSize,bucketSize);
+        }
+
 
         std::vector<Particle> getParticles(){
 

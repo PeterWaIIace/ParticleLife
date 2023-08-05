@@ -3,10 +3,11 @@
 int main(int argc, char* argv[])
 {
     ParticleSystem system;
-    system.init(10000);
+    system.init(3000);
+
     timeit([&system](){
         system.step(
-            // Step1 Let particle interact
+            // Step 1 Let particle interact
             [](Particle& main, Particle& other){
                 float relation = 1.0;
                 float r = sqrt(pow(other.x - main.x,2) + pow(other.y - main.y,2));
@@ -22,7 +23,7 @@ int main(int argc, char* argv[])
                     other.f_y += ((main.y - other.y)/r) * f;
                 }
             },
-            // Step2 Update its velocity
+            // Step 2 Update its velocity
             [](Particle& main){
                 main.f_x *= main.rMax * main.force;
                 main.f_y *= main.rMax * main.force;

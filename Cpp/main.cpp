@@ -8,7 +8,7 @@ int main(void)
     std::cout << "starting" << std::endl;
 
     ParticleSystem system;
-    system.init(1000);
+    system.init(3000);
 
     int width  = 1000;
     int height = 1000;
