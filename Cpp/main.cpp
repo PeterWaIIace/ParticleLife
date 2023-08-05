@@ -51,6 +51,7 @@ int main(void)
                 main.v_y += main.f_y * main.dt;
             }
         );
+
         for(auto particle : system.getParticles())
         {
             float x = (particle.x)*width;

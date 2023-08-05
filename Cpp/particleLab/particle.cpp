@@ -3,7 +3,7 @@
 int main(int argc, char* argv[])
 {
     ParticleSystem system;
-    system.init(3000);
+    system.init(10000);
 
     timeit([&system](){
         system.step(
@@ -36,6 +36,12 @@ int main(int argc, char* argv[])
             }
 
         );
+    });
+
+    std::cout << "system.getParticles().size(): "<< system.getParticles().size() << std::endl;
+
+    timeit([&system](){
+        system.step_MT();
     });
 
     std::cout << system.getParticles().size() << std::endl;
