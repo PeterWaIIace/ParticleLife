@@ -295,14 +295,14 @@ class Buckets
             return b__[i][j].pop();
         }
 
-        std::vector<Particle>& getSurroundingBuckets()
+        std::vector<Particle> getSurroundingBuckets()
         {
             int row = interatorIndex/nBucketsWidth;
             int col = interatorIndex%nBucketsWidth;
             return getSurroundingBuckets(row,col);
         }
 
-        std::vector<Particle>& getSurroundingBuckets(int i , int j)
+        std::vector<Particle> getSurroundingBuckets(int i , int j)
         {
             std::vector<Particle> neighbors;
             for(int n = -1 ; n <= 1 ; n++)
@@ -328,11 +328,9 @@ class Buckets
             {
                 for(int row = 0 ; row < nBucketsHeight ; row++)
                 {
-                    std::cout << "row " << row << " col " << col << " size: " << neighbors.size() << std::endl;
                     neighbors.insert(neighbors.end(),b__[row][col].pop()->begin(),b__[row][col].pop()->end());
                 }
             }
-            std::cout << "size: " << neighbors.size() << std::endl;
             return neighbors;
         }
 };
@@ -349,7 +347,11 @@ class ParticleSystem
         Buckets buckets = Buckets(bucketSize,bucketSize);
         Buckets nextBuckets = Buckets(bucketSize,bucketSize);
 
+
+        Pool<std::pair<Particle,std::vector<Particle>>,Particle> workers;
+
     public:
+        ParticleSystem(){};
         void init(int initSize = 10000)
         {
             double lower_bound = 0.0;
@@ -417,82 +419,68 @@ class ParticleSystem
             nextBuckets = Buckets(bucketSize,bucketSize);
         }
 
+        void create_pool()
+        {
+            workers = Pool<std::pair<Particle,std::vector<Particle>>,Particle>(
+                10,
+                [](std::pair<Particle,std::vector<Particle>>& workload){
+                    for(auto other : workload.second)
+                    {
+                        workload.first.interact(other);
+                    }
+
+                    // this may mess up calculations so it may be better in other thread
+                    workload.first.updateVelocity();
+                    workload.first.updatePostion();
+
+                    return workload.first;
+                }
+            );
+        };
+
         void step_MT()
         {
-            TSQueue<std::pair<Particle,std::vector<Particle>>> workload;
-            TSQueue<Particle> midResults;
 
-            Pool workers(10);
-            // prepare workload
-            int nTasks = 0;
             for(auto& bucket : buckets)
             {
-
                 auto frame =  bucket.first->pop();
 
                 while(frame->size() > 0)
                 {
-                    workload.push(std::make_pair(frame->back(),bucket.second));
+                    workers.push(std::make_pair(frame->back(),bucket.second));
                     frame->pop_back();
-
                 }
 
-                nTasks++;
             }
 
-            // Pass workload to threadPool 
-            // TASK:
-            auto lambda1 = [](TSQueue<std::pair<Particle,std::vector<Particle>>>& workload,TSQueue<Particle>& midResults){
-                auto work = workload.pop();
+            workers.await();
+            workers.stop();
 
-                for(auto other : work.second)
-                {
-                    work.first.interact(other);
-                }
-
-                work.first.updateVelocity();
-                work.first.updatePostion();
-
-                midResults.push(work.first);
-            };
-
-            std::cout << "workers.start task1 " << std::endl;
-            workers.start<std::pair<Particle,std::vector<Particle>>,TSQueue<Particle>>(lambda1,workload,midResults);
-
-            while(workload.size() > 0){
-                std::cout << "workload.size(): " << workload.size() << std::endl;
-            };
-
-
-            auto lambda2 = [](TSQueue<Particle> &workload,Buckets& nextBuckets){
-                auto particle = workload.pop();
-
-                particle.updateVelocity();
-                particle.updatePostion();
-
+            for(auto particle : workers.getResults()){
                 nextBuckets.insert(particle);
             };
 
-            std::cout << "workers.start task2 " << std::endl;
-            workers.start<Particle,Buckets>(lambda2,midResults,this->nextBuckets);
-
-            while(midResults.size() > 0){
-                std::cout << "midResults.size(): " << midResults.size() << std::endl;
-            };
-
-            // wait for results
-
-            // std::cout << "countBuckers: " << countBuckets << std::endl;
             buckets = nextBuckets;
             nextBuckets = Buckets(bucketSize,bucketSize);
         }
 
+        void __testCreatePairs(){
+            for(auto& bucket : buckets)
+            {
+                auto frame =  bucket.first->pop();
+
+                while(frame->size() > 0)
+                {
+                    auto tmp = std::make_pair(frame->back(),bucket.second);
+                    frame->pop_back();
+                }
+
+            }
+        }
 
         std::vector<Particle> getParticles()
         {
-            std::cout << "get all particles: "<< std::endl;
             auto tmp = buckets.getAllBuckets();
-            std::cout << "size: " << tmp.size() << std::endl;
             return tmp;
         };
 };
