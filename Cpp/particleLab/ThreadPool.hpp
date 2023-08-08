@@ -21,6 +21,8 @@ class TSQueue {
         std::condition_variable m_cond;
 
         size_t size__ = 0;
+
+        
     public:
         // Pushes an element to the queue
         void push(T item)
@@ -85,7 +87,23 @@ class Worker
             outputStream = other.outputStream;
         }
 
-        Worker(std::function<OutType&(InType&)> task,std::shared_ptr<TSQueue<InType>> workloadStream,std::shared_ptr<TSQueue<OutType>> outputStream)
+        void workerThread(  std::shared_ptr<ThreadControl> &ptrControl_, 
+                            std::shared_ptr<TSQueue<InType>> &ptrWorkloadStream_, 
+                            std::shared_ptr<TSQueue<OutType>> &ptrOutputStream_,
+                            std::function<OutType&(InType&)> &task)
+            {
+            while(ptrControl_->running){
+                while(!ptrWorkloadStream_->empty() && ptrControl_->running)
+                    {
+                        auto tmp = task(
+                            ptrWorkloadStream_->pop()
+                        );
+                        ptrOutputStream_->push(tmp);
+                }
+            };
+        }
+
+        Worker(std::function<OutType&(InType&)> &task,std::shared_ptr<TSQueue<InType>> workloadStream,std::shared_ptr<TSQueue<OutType>> outputStream)
         {
             // std::cout << "Creating: " << this << std::endl;
             control = std::make_shared<ThreadControl>();
@@ -94,25 +112,8 @@ class Worker
             workloadStream = workloadStream;
             outputStream = outputStream;
 
-            auto ptrControl_ = control;
-            auto ptrWorkloadStream_ = workloadStream;
-            auto ptrOutputStream_ = outputStream;
-
-            threadPtr_ =  std::make_shared<std::thread>(
-                [ptrControl_,ptrWorkloadStream_,ptrOutputStream_,task](){
-                    while(ptrControl_->running){
-                        while(!ptrWorkloadStream_->empty() && ptrControl_->running)
-                        {
-                            ptrOutputStream_->push(
-                                task(
-                                    ptrWorkloadStream_->pop()
-                                )
-                            );
-                        }
-                    }; // wait for start
-                    ptrControl_->running = false;
-                }
-            );
+            threadPtr_ = std::make_shared<std::thread>(&Worker<InType,OutType>::workerThread,this,control,workloadStream,outputStream,task);
+            // threadPtr_ =  std::make_shared<std::thread>(Worker::workerThread,this);
             threadPtr_->detach();
         }
 
@@ -144,43 +145,57 @@ template <class InType,class OutType>
 class Pool
 {
     int nTasks = 0;
+    int channel__ = 0;
+    int nWorkers__ = 0;
     std::function<OutType&(InType&)> task;
     std::vector<Worker<InType,OutType>> workers;
-    std::shared_ptr<TSQueue<InType>> workloadStream = std::make_shared<TSQueue<InType>>();
-    std::shared_ptr<TSQueue<OutType>> outputStream  = std::make_shared<TSQueue<OutType>>();
+    std::vector<std::shared_ptr<TSQueue<InType>>> inputStreams;
+    std::vector<std::shared_ptr<TSQueue<OutType>>> outputStreams;
+    // std::shared_ptr<TSQueue<InType>> workloadStream = std::make_shared<TSQueue<InType>>();
+    // std::shared_ptr<TSQueue<OutType>> outputStream  = std::make_shared<TSQueue<OutType>>();
 
     public:
         Pool(){};
         Pool(Pool &other){
             task = other.task;
-            for(int n = 0 ; n < nWorkers ; n++)
+            nWorkers__ = other.nWorkers;
+            for(int n = 0 ; n < nWorkers__ ; n++)
             {
-                workers.push_back(Worker<InType,OutType>(task,workloadStream,outputStream));
+                inputStreams.push_back(std::make_shared<TSQueue<InType>>());
+                outputStreams.push_back(std::make_shared<TSQueue<OutType>>());
+                workers.push_back(Worker<InType,OutType>(task,inputStreams[n],outputStreams[n]));
             }
         };
 
         Pool(int nWorkers,std::function<OutType&(InType&)> task)
         {
             task = task;
-            for(int n = 0 ; n < nWorkers ; n++)
+            nWorkers__ = nWorkers;
+            for(int n = 0 ; n < nWorkers__ ; n++)
             {
-                workers.push_back(Worker<InType,OutType>(task,workloadStream,outputStream));
+                inputStreams.push_back(std::make_shared<TSQueue<InType>>());
+                outputStreams.push_back(std::make_shared<TSQueue<OutType>>());
+                workers.push_back(Worker<InType,OutType>(task,inputStreams[n],outputStreams[n]));
             }
         }
 
         void push(InType job)
         {
-            workloadStream->push(job);
+            inputStreams[channel__]->push(job);
+            channel__++;
+            channel__ %= nWorkers__;
             nTasks++;
         }
 
         std::vector<OutType> getResults()
         {
             std::vector<OutType> tmp_;
-            auto nResults = outputStream->size();
-            for(int n = 0 ; n < nResults ; n++)
-            {
-                tmp_.push_back(outputStream->pop());
+            for(int j = 0 ; j < nWorkers__ ; j++){
+                auto nResults = outputStreams[j]->size();
+                for(int n = 0 ; n < nResults ; n++)
+                {
+                    tmp_.push_back(outputStreams[j]->pop());
+                }
             }
             return tmp_;
         }
@@ -195,8 +210,21 @@ class Pool
 
         void await()
         {
-            while(workloadStream->size() > 0){};
-            while(nTasks != outputStream->size()){};
+            size_t size = 1;
+            while(size > 0){
+                size = 0;
+                for(int j = 0 ; j < nWorkers__ ; j++){
+                    size += inputStreams[j]->size();
+                }
+            };
+
+            size = 0;
+            while(nTasks != size){
+                size = 0;
+                for(int j = 0 ; j < nWorkers__ ; j++){
+                    size += outputStreams[j]->size();
+                }
+            };
         }
 
         void  stop()

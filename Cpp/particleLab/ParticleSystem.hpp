@@ -30,6 +30,17 @@ double F(float distance,float a, float b)
     }
 }
 
+
+void timeit(std::function<void(void)> fn)
+{
+    auto start = high_resolution_clock::now();
+    fn();
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(stop - start);
+    std::cout << duration.count() << "ms" << std::endl;
+};
+
+
 class Particle{
 
     public:
@@ -335,6 +346,19 @@ class Buckets
         }
 };
 
+
+Particle task(std::pair<Particle,std::vector<Particle>>& workload){
+    for(auto other : workload.second)
+    {
+        workload.first.interact(other);
+    }
+    // this may mess up calculations so it may be better in other thread
+    workload.first.updateVelocity();
+    workload.first.updatePostion();
+
+    return workload.first;
+}
+
 class ParticleSystem
 {
     private:
@@ -422,46 +446,46 @@ class ParticleSystem
         void create_pool()
         {
             workers = Pool<std::pair<Particle,std::vector<Particle>>,Particle>(
-                10,
-                [](std::pair<Particle,std::vector<Particle>>& workload){
-                    for(auto other : workload.second)
-                    {
-                        workload.first.interact(other);
-                    }
-
-                    // this may mess up calculations so it may be better in other thread
-                    workload.first.updateVelocity();
-                    workload.first.updatePostion();
-
-                    return workload.first;
-                }
+                5,
+                task
             );
         };
 
         void step_MT()
         {
-
-            for(auto& bucket : buckets)
-            {
-                auto frame =  bucket.first->pop();
-
-                while(frame->size() > 0)
+            std::cout << "send to queues" << std::endl;
+            timeit([this](){
+                for(auto& bucket : buckets)
                 {
-                    workers.push(std::make_pair(frame->back(),bucket.second));
-                    frame->pop_back();
+                    auto frame =  bucket.first->pop();
+
+                    while(frame->size() > 0)
+                    {
+                        workers.push(std::make_pair(frame->back(),bucket.second));
+                        frame->pop_back();
+                    }
+
                 }
+            });
 
-            }
+            std::cout << "wait" << std::endl;
+            timeit([this](){
+                workers.await();
+                workers.stop();
+            });
 
-            workers.await();
-            workers.stop();
+            std::cout << "collect results" << std::endl;
+            timeit([this](){
+                for(auto particle : workers.getResults()){
+                    nextBuckets.insert(particle);
+                };
+            });
 
-            for(auto particle : workers.getResults()){
-                nextBuckets.insert(particle);
-            };
-
-            buckets = nextBuckets;
-            nextBuckets = Buckets(bucketSize,bucketSize);
+            std::cout << "copy buckets" << std::endl;
+            timeit([this](){
+                buckets = nextBuckets;
+                nextBuckets = Buckets(bucketSize,bucketSize);
+            });
         }
 
         void __testCreatePairs(){
@@ -483,13 +507,4 @@ class ParticleSystem
             auto tmp = buckets.getAllBuckets();
             return tmp;
         };
-};
-
-void timeit(std::function<void(void)> fn)
-{
-    auto start = high_resolution_clock::now();
-    fn();
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(stop - start);
-    std::cout << duration.count() << "ms" << std::endl;
 };
