@@ -3,7 +3,8 @@
 int main(int argc, char* argv[])
 {
     ParticleSystem system;
-    system.init(10000);
+    int numberOfParticles = atoi(argv[1]);
+    system.init(numberOfParticles);
 
     timeit([&system](){
         system.step(
@@ -38,13 +39,13 @@ int main(int argc, char* argv[])
         );
     });
 
-    std::cout << "system.getParticles().size(): "<< system.getParticles().size() << std::endl;
+    // std::cout << "system.getParticles(): " << &system.getParticles() <<  "system.getParticles().size(): " << system.getParticles().size() << std::endl;
+    std::cout << system.getParticles().size() << std::endl;
 
+    system.create_pool();
     timeit([&system](){
         system.step_MT();
     });
-
-    std::cout << system.getParticles().size() << std::endl;
 
     // Particle el1(0.01,0.01);
     // Particle el2(0.01,0.011);
