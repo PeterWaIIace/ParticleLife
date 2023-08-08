@@ -3,7 +3,8 @@
 int main(int argc, char* argv[])
 {
     ParticleSystem system;
-    system.init(10000);
+    int numberOfParticles = atoi(argv[1]);
+    system.init(numberOfParticles);
 
     timeit([&system](){
         system.step(

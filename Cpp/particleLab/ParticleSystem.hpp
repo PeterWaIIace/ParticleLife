@@ -365,7 +365,7 @@ class ParticleSystem
         // std::vector<Particle> frame;
         // std::vector<Particle> nextFrame;
 
-        int bucketSize = 5;
+        int bucketSize = 10;
         std::mutex g_bucket_mutex;
 
         Buckets buckets = Buckets(bucketSize,bucketSize);
@@ -453,7 +453,6 @@ class ParticleSystem
 
         void step_MT()
         {
-            std::cout << "send to queues" << std::endl;
             timeit([this](){
                 for(auto& bucket : buckets)
                 {
@@ -464,28 +463,18 @@ class ParticleSystem
                         workers.push(std::make_pair(frame->back(),bucket.second));
                         frame->pop_back();
                     }
-
                 }
             });
 
-            std::cout << "wait" << std::endl;
-            timeit([this](){
-                workers.await();
-                workers.stop();
-            });
+            workers.await();
+            workers.stop();
 
-            std::cout << "collect results" << std::endl;
-            timeit([this](){
-                for(auto particle : workers.getResults()){
-                    nextBuckets.insert(particle);
-                };
-            });
+            for(auto particle : workers.getResults()){
+                nextBuckets.insert(particle);
+            };
 
-            std::cout << "copy buckets" << std::endl;
-            timeit([this](){
-                buckets = nextBuckets;
-                nextBuckets = Buckets(bucketSize,bucketSize);
-            });
+            buckets = nextBuckets;
+            nextBuckets = Buckets(bucketSize,bucketSize);
         }
 
         void __testCreatePairs(){

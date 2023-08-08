@@ -20,9 +20,6 @@ class TSQueue {
         // Condition variable for signaling
         std::condition_variable m_cond;
 
-        size_t size__ = 0;
-
-        
     public:
         // Pushes an element to the queue
         void push(T item)
