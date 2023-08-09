@@ -38,8 +38,8 @@ class TSQueue {
             // acquire lock
             std::unique_lock<std::mutex> lock(m_mutex);
             // wait until queue is not empty
-            m_cond.wait(lock,
-                        [this]() { return !m_queue.empty(); });
+            // m_cond.wait(lock,
+            //             [this]() { return !m_queue.empty(); });
             // retrieve item
             T item = m_queue.front();
             m_queue.pop();
@@ -88,17 +88,17 @@ class Worker
                             std::shared_ptr<TSQueue<InType>> &ptrWorkloadStream_, 
                             std::shared_ptr<TSQueue<OutType>> &ptrOutputStream_,
                             std::function<OutType&(InType&)> &task)
-            {
-            while(ptrControl_->running){
-                while(!ptrWorkloadStream_->empty() && ptrControl_->running)
-                    {
-                        auto tmp = task(
-                            ptrWorkloadStream_->pop()
-                        );
-                        ptrOutputStream_->push(tmp);
+        {
+        while(ptrControl_->running){
+            while(!ptrWorkloadStream_->empty() && ptrControl_->running)
+                {
+                    auto tmp = task(
+                        ptrWorkloadStream_->pop()
+                    );
+                    ptrOutputStream_->push(tmp);
                 }
-            };
-        }
+            }
+        };
 
         Worker(std::function<OutType&(InType&)> &task,std::shared_ptr<TSQueue<InType>> workloadStream,std::shared_ptr<TSQueue<OutType>> outputStream)
         {

@@ -365,21 +365,26 @@ class ParticleSystem
         // std::vector<Particle> frame;
         // std::vector<Particle> nextFrame;
 
-        int bucketSize = 10;
+        int bucketSize = 1;
         std::mutex g_bucket_mutex;
 
-        Buckets buckets = Buckets(bucketSize,bucketSize);
-        Buckets nextBuckets = Buckets(bucketSize,bucketSize);
+        Buckets buckets;
+        Buckets nextBuckets;
 
 
         Pool<std::pair<Particle,std::vector<Particle>>,Particle> workers;
 
     public:
         ParticleSystem(){};
-        void init(int initSize = 10000)
+        void init(int initSize = 10000, unsigned int bucketSize = 1)
         {
             double lower_bound = 0.0;
             double upper_bound = 1.0;
+
+            bucketSize = bucketSize;
+            std::cout << "bucketSize: " << bucketSize << std::endl;
+            buckets = Buckets(bucketSize,bucketSize);
+            nextBuckets = Buckets(bucketSize,bucketSize);
 
             std::uniform_real_distribution<double> unif(lower_bound,upper_bound);
             std::default_random_engine re;
@@ -389,6 +394,13 @@ class ParticleSystem
                 buckets.insert(Particle(unif(re),unif(re)));
             }
         }
+
+        // ParticleSystem(ParticleSystem& other){
+        //     bucketSize = other.bucketSize;
+        //     buckets    = other.buckets;
+        //     nextBuckets= other.nextBuckets;
+        //     workers    = other.workers;
+        // };
 
         void step(void (interact__)(Particle&,Particle&),void (updateVelocity__)(Particle&))
         {
@@ -453,21 +465,18 @@ class ParticleSystem
 
         void step_MT()
         {
-            timeit([this](){
-                for(auto& bucket : buckets)
-                {
-                    auto frame =  bucket.first->pop();
+            for(auto& bucket : buckets)
+            {
+                auto frame =  bucket.first->pop();
 
-                    while(frame->size() > 0)
-                    {
-                        workers.push(std::make_pair(frame->back(),bucket.second));
-                        frame->pop_back();
-                    }
+                while(frame->size() > 0)
+                {
+                    workers.push(std::make_pair(frame->back(),bucket.second));
+                    frame->pop_back();
                 }
-            });
+            }
 
             workers.await();
-            workers.stop();
 
             for(auto particle : workers.getResults()){
                 nextBuckets.insert(particle);
