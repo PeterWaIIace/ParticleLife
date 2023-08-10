@@ -471,8 +471,12 @@ class ParticleSystem
 
                 while(frame->size() > 0)
                 {
-                    workers.push(std::make_pair(frame->back(),bucket.second));
+                    auto particle = frame->back();
                     frame->pop_back();
+                    for(auto other : *frame){
+                        bucket.second.push_back(other);
+                    }
+                    workers.push(std::make_pair(particle,bucket.second));
                 }
             }
 
