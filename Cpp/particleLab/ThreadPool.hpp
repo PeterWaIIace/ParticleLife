@@ -38,8 +38,8 @@ class TSQueue {
             // acquire lock
             std::unique_lock<std::mutex> lock(m_mutex);
             // wait until queue is not empty
-            // m_cond.wait(lock,
-            //             [this]() { return !m_queue.empty(); });
+            m_cond.wait(lock,
+                        [this]() { return !m_queue.empty(); });
             // retrieve item
             T item = m_queue.front();
             m_queue.pop();
@@ -49,7 +49,7 @@ class TSQueue {
 
         bool empty()
         {
-            return !m_queue.size();
+            return m_queue.size() == 0;
         }
 
         // Get size of queue
@@ -68,9 +68,9 @@ class Worker
             bool running = false;
         };
 
-        std::shared_ptr<ThreadControl> control;
-        std::shared_ptr<std::thread> threadPtr_;
-        std::shared_ptr<TSQueue<InType>> workloadStream;
+        std::shared_ptr<ThreadControl>    control;
+        std::shared_ptr<std::thread>      threadPtr_;
+        std::shared_ptr<TSQueue<InType>>  workloadStream;
         std::shared_ptr<TSQueue<OutType>> outputStream;
 
     public:
@@ -215,18 +215,16 @@ class Pool
                 }
             };
 
-            size = 0;
-            while(nTasks != size){
-                size = 0;
+            while(nTasks > 0){
                 for(int j = 0 ; j < nWorkers__ ; j++){
-                    size += outputStreams[j]->size();
+                    nTasks -= outputStreams[j]->size();
                 }
             };
         }
 
         void  stop()
         {
-            for(auto worker : workers)
+            for(auto& worker : workers)
             {
                 worker.stop();
             }
