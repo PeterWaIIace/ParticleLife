@@ -18,10 +18,10 @@ class RelationalBucket{
 
     public:
     void insert(Particle &p){
-        this->addRelation(p);
-
         Relation newRelation;
         newRelation.p = p;
+
+        this->addRelation(newRelation.p);
         rels.push_back(newRelation);
     }
 
@@ -42,6 +42,15 @@ class RelationalBucket{
         return rels;
     };
 
+    std::vector<size_t> getRelationsSize()
+    {
+        std::vector<size_t> relsSize;
+        for(auto& r : rels){
+            relsSize.push_back(r.related.size());
+        }
+        return relsSize;
+    };
+
 };
 
 
@@ -50,11 +59,13 @@ class RelationalFrames{
 
     std::vector<RelationalBucket> buckets;
 
-    size_t nBuckets = 1;
+    unsigned int nBuckets = 1;
 
     int getKey(double x, double y)
     {
-        return int(x) + (int(y) * nBuckets);
+        double step = 1.0/double(nBuckets)+0.01; // +0.01 is for making sure that x or y divided by /step will never be equal 1.0
+        int key = int(x/step) + (int(y/step) * (nBuckets));
+        return key;
     }
 
     void insertIntoBucket(Particle &p)
@@ -80,6 +91,8 @@ class RelationalFrames{
     public:
 
     RelationalFrames(unsigned int nBuckets){
+
+        this->nBuckets = nBuckets;
 
         for(int n = 0 ; n < nBuckets*nBuckets ; n++){
             buckets.push_back(RelationalBucket());
@@ -107,5 +120,29 @@ class RelationalFrames{
             }
         };
         return relations;
+    }
+
+    size_t size()
+    {
+        return buckets.size();
+    }
+
+    size_t relations()
+    {
+        size_t relationsSize = 0;
+        for(auto& bucket : buckets){
+            relationsSize += bucket.getRelations().size();
+        };
+        return relationsSize;
+    }
+
+    std::vector<size_t> relationSizes()
+    {
+        std::vector<size_t> relationsSize;
+        for(auto& bucket : buckets){
+            auto& tmp_ = bucket.getRelationsSize();
+            relationsSize.insert(relationsSize.end(),tmp_.begin(),tmp_.end());
+        };
+        return relationsSize;
     }
 };

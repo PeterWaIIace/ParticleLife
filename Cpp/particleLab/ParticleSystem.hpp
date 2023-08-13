@@ -219,7 +219,7 @@ class Buckets
 };
 
 
-Particle task(std::pair<Particle,std::vector<Particle>>& workload){
+inline Particle task(std::pair<Particle,std::vector<Particle>>& workload){
     for(auto other : workload.second)
     {
         workload.first.interact(other);
@@ -254,7 +254,6 @@ class ParticleSystem
             double upper_bound = 1.0;
 
             bucketSize = bucketSize;
-            std::cout << "bucketSize: " << bucketSize << std::endl;
             buckets = Buckets(bucketSize,bucketSize);
             nextBuckets = Buckets(bucketSize,bucketSize);
 

@@ -12,7 +12,7 @@
 #include <queue>
 
 
-double F(float distance,float a, float b)
+inline double F(float distance,float a, float b)
 {
     if(distance < b)
     {
@@ -151,15 +151,21 @@ class Particle{
         {
             std::vector<std::pair<double,double>> coordinates;
 
-            coordinates.push_back(std::make_pair(x+rMax,y)); // right
-            coordinates.push_back(std::make_pair(x,y+rMax)); // up
-            coordinates.push_back(std::make_pair(x-rMax,y)); // left
-            coordinates.push_back(std::make_pair(x,y-rMax)); // bottom
+            auto filter = [](double val){
+                if(val > 1.0) val = 1.0;
+                else if(val < 0.0) val = 0.0;
+                return val;
+            };
 
-            coordinates.push_back(std::make_pair(x+rMax,y+rMax)); // right - up
-            coordinates.push_back(std::make_pair(x-rMax,y+rMax)); // left - up
-            coordinates.push_back(std::make_pair(x-rMax,y-rMax)); // left - bottom
-            coordinates.push_back(std::make_pair(x+rMax,y-rMax)); // right - bottom 
+            coordinates.push_back(std::make_pair(filter(x+rMax)  ,filter(y)     )); // right
+            coordinates.push_back(std::make_pair(filter(x)       ,filter(y+rMax))); // up
+            coordinates.push_back(std::make_pair(filter(x-rMax)  ,filter(y)     )); // left
+            coordinates.push_back(std::make_pair(filter(x)       ,filter(y-rMax))); // bottom
+
+            coordinates.push_back(std::make_pair(filter(x+rMax),filter(y+rMax))); // right - up
+            coordinates.push_back(std::make_pair(filter(x-rMax),filter(y+rMax))); // left - up
+            coordinates.push_back(std::make_pair(filter(x-rMax),filter(y-rMax))); // left - bottom
+            coordinates.push_back(std::make_pair(filter(x+rMax),filter(y-rMax))); // right - bottom 
 
             return coordinates;
         }
