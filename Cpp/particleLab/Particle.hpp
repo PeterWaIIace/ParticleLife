@@ -10,6 +10,7 @@
 #include <math.h>
 #include <mutex>
 #include <queue>
+#include <set>
 
 
 inline double F(float distance,float a, float b)
@@ -27,6 +28,26 @@ inline double F(float distance,float a, float b)
         return 0.0;
     }
 }
+
+
+inline double filter(double val){
+    if(val > 1.0) val = 1.0;
+    else if(val < 0.0) val = 0.0;
+    return val;
+};
+
+inline std::vector<double> getRange(double mid, double rMax, double step){
+    double start = filter(mid - rMax);
+    double end = filter(mid + rMax);
+
+    std::vector<double> range;
+    while(start < end){
+        range.push_back(start);
+        start = filter(start + step);
+    }
+    return range;
+};
+
 
 
 class Particle{
@@ -147,25 +168,20 @@ class Particle{
         }
 
         // how to name it nicely?
-        std::vector<std::pair<double,double>> getMaxCoordinates()
+        std::vector<std::pair<double,double>> getMaxCoordinates(double step)
         {
             std::vector<std::pair<double,double>> coordinates;
 
-            auto filter = [](double val){
-                if(val > 1.0) val = 1.0;
-                else if(val < 0.0) val = 0.0;
-                return val;
-            };
+            std::vector<double> y_range = getRange(y,rMax,step);
 
-            coordinates.push_back(std::make_pair(filter(x+rMax)  ,filter(y)     )); // right
-            coordinates.push_back(std::make_pair(filter(x)       ,filter(y+rMax))); // up
-            coordinates.push_back(std::make_pair(filter(x-rMax)  ,filter(y)     )); // left
-            coordinates.push_back(std::make_pair(filter(x)       ,filter(y-rMax))); // bottom
-
-            coordinates.push_back(std::make_pair(filter(x+rMax),filter(y+rMax))); // right - up
-            coordinates.push_back(std::make_pair(filter(x-rMax),filter(y+rMax))); // left - up
-            coordinates.push_back(std::make_pair(filter(x-rMax),filter(y-rMax))); // left - bottom
-            coordinates.push_back(std::make_pair(filter(x+rMax),filter(y-rMax))); // right - bottom 
+            for (auto& x_step: getRange(x,rMax,step) ){
+                for (auto& y_step : y_range) {
+                    if(sqrt(pow((x_step - x),2) + pow((y_step - y),2)) < rMax)
+                    {
+                        coordinates.push_back({x_step, y_step});
+                    }
+                }
+            }
 
             return coordinates;
         }

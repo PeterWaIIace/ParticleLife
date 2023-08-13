@@ -111,8 +111,10 @@ TEST(RelationalBucket, checkKeyFunction) {
     ASSERT_TRUE(true);
 }
 
+#define BUCKETS 20
+
 TEST(RelationalBucket, checkIfAlgorithmIsInTimeConstraints1000samples) {
-    unsigned int bucketSize = 20;
+    unsigned int bucketSize = BUCKETS;
     RelationalFrames frames(bucketSize);
 
     double lower_bound = 0.0;
@@ -138,7 +140,7 @@ TEST(RelationalBucket, checkIfAlgorithmIsInTimeConstraints1000samples) {
 
 
 TEST(RelationalBucket, checkIfAlgorithmIsInTimeConstraints5000samples) {
-    unsigned int bucketSize = 20;
+    unsigned int bucketSize = BUCKETS;
     RelationalFrames frames(bucketSize);
 
     double lower_bound = 0.0;
@@ -163,7 +165,7 @@ TEST(RelationalBucket, checkIfAlgorithmIsInTimeConstraints5000samples) {
 }
 
 TEST(RelationalBucket, checkIfAlgorithmIsInTimeConstraints10000samples) {
-    unsigned int bucketSize = 20;
+    unsigned int bucketSize = BUCKETS;
     RelationalFrames frames(bucketSize);
 
     double lower_bound = 0.0;

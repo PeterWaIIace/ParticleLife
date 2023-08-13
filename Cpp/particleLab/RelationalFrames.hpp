@@ -58,12 +58,12 @@ class RelationalFrames{
     private:
 
     std::vector<RelationalBucket> buckets;
+    double step = 1.0;
 
     unsigned int nBuckets = 1;
 
     int getKey(double x, double y)
     {
-        double step = 1.0/double(nBuckets)+0.01; // +0.01 is for making sure that x or y divided by /step will never be equal 1.0
         int key = int(x/step) + (int(y/step) * (nBuckets));
         return key;
     }
@@ -80,7 +80,7 @@ class RelationalFrames{
     std::set<RelationalBucket*> getRelatedBuckets(Particle &p)
     {
         std::set<RelationalBucket*> bucketsPtr;
-        for(auto coords : p.getMaxCoordinates())
+        for(auto coords : p.getMaxCoordinates(step))
         {
             bucketsPtr.insert(&buckets[getKey(coords.first,coords.second)]);
         }
@@ -93,6 +93,7 @@ class RelationalFrames{
     RelationalFrames(unsigned int nBuckets){
 
         this->nBuckets = nBuckets;
+        this->step = 1.0/double(nBuckets)+(1.0/double(nBuckets))/100; // +(1.0/double(nBuckets))/100 is for making sure that x or y divided by /step will never be equal 1.0
 
         for(int n = 0 ; n < nBuckets*nBuckets ; n++){
             buckets.push_back(RelationalBucket());
@@ -104,6 +105,7 @@ class RelationalFrames{
     {
         nBuckets = other.nBuckets;
         buckets  = other.buckets;
+        step     = other.step;
     }
 
     void insert(Particle &p){
