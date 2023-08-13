@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
-project(perf_test)
+project(test)
 
 # GoogleTest requires at least C++14
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
@@ -15,14 +15,21 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 add_executable(
-  perf_test
+  test
   SystemTests.cpp
-  ../particleLab/ParticleSystem.hpp
+  RelationalFramesTests.cpp
 )
+
+
+target_include_directories(test
+  PRIVATE
+  ../particleLab
+)
+
 target_link_libraries(
-  perf_test
+  test
   GTest::gtest_main
 )
 
 include(GoogleTest)
-gtest_discover_tests(perf_test)
+gtest_discover_tests(test)

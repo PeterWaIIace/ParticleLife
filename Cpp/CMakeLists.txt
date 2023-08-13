@@ -9,7 +9,6 @@ FetchContent_Declare(raylib
 FetchContent_MakeAvailable(raylib)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/particleLab)
-# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/particleLib)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 add_executable(myproject

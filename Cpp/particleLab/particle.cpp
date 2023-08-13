@@ -1,13 +1,20 @@
+// this file should be named differently than particle
+
 #include <ParticleSystem.hpp>
+#include <DiagnosticLog.hpp>
+#include <Particle.hpp>
 
 int main(int argc, char* argv[])
 {
     ParticleSystem system;
+
+    int steps = 15;
     int numberOfParticles = atoi(argv[1]);
     unsigned int bucketSize = atoi(argv[2]);
+    unsigned int poolSize =  atoi(argv[3]);
     system.init(numberOfParticles,bucketSize);
 
-    for(int n = 0; n < 5 ; n++){
+    for(int n = 0; n < steps ; n++){
         timeit([&system](){
             system.step(
                 // Step 1 Let particle interact
@@ -40,21 +47,20 @@ int main(int argc, char* argv[])
 
             );
         });
-        std::cout << system.getParticles().size() << std::endl;
+        // std::cout << system.getParticles().size() << std::endl;
     }
 
     // std::cout << "system.getParticles(): " << &system.getParticles() <<  "system.getParticles().size(): " << system.getParticles().size() << std::endl;
 
     ParticleSystem system2;
     system2.init(numberOfParticles,bucketSize);
-    system2.create_pool();
+    system2.create_pool(poolSize);
 
-    for(int n = 0 ; n  < 5 ; n++)
+    for(int n = 0 ; n  < steps ; n++)
     {
         timeit([&system2](){
             system2.step_MT();
         });
-        std::cout << system2.getParticles().size() << std::endl;
     }
 
     // Particle el1(0.01,0.01);

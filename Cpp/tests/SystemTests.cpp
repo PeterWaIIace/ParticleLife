@@ -1,4 +1,4 @@
-#include "../particleLab/ParticleSystem.hpp"
+#include "ParticleSystem.hpp"
 #include <gtest/gtest.h>
 #include <chrono>
 #include <random>

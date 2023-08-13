@@ -3,11 +3,18 @@
 #include <thread>
 #include <vector>
 #include <array>
+#include <chrono>
 
 #include <mutex>
 #include <queue>
 
+#include <iostream>
 #include <functional>
+
+#include "DiagnosticLog.hpp"
+
+using namespace std::chrono;
+using namespace std::chrono_literals;
 
 // Thread-safe queue
 template <typename T>
@@ -19,7 +26,6 @@ class TSQueue {
         std::mutex m_mutex;
         // Condition variable for signaling
         std::condition_variable m_cond;
-
     public:
         // Pushes an element to the queue
         void push(T item)
@@ -49,7 +55,7 @@ class TSQueue {
 
         bool empty()
         {
-            return m_queue.size() == 0;
+            return this->size() == 0;
         }
 
         // Get size of queue
@@ -89,13 +95,10 @@ class Worker
                             std::shared_ptr<TSQueue<OutType>> &ptrOutputStream_,
                             std::function<OutType&(InType&)> &task)
         {
-        while(ptrControl_->running){
-            while(!ptrWorkloadStream_->empty() && ptrControl_->running)
+            while(ptrControl_->running){
+                while(!ptrWorkloadStream_->empty() && ptrControl_->running)
                 {
-                    auto tmp = task(
-                        ptrWorkloadStream_->pop()
-                    );
-                    ptrOutputStream_->push(tmp);
+                    ptrOutputStream_->push(task(ptrWorkloadStream_->pop()));
                 }
             }
         };
@@ -136,7 +139,6 @@ class Worker
         }
 };
 
-//TODO: add diagnostics
 
 template <class InType,class OutType>
 class Pool
@@ -148,8 +150,6 @@ class Pool
     std::vector<Worker<InType,OutType>> workers;
     std::vector<std::shared_ptr<TSQueue<InType>>> inputStreams;
     std::vector<std::shared_ptr<TSQueue<OutType>>> outputStreams;
-    // std::shared_ptr<TSQueue<InType>> workloadStream = std::make_shared<TSQueue<InType>>();
-    // std::shared_ptr<TSQueue<OutType>> outputStream  = std::make_shared<TSQueue<OutType>>();
 
     public:
         Pool(){};
@@ -211,13 +211,15 @@ class Pool
             while(size > 0){
                 size = 0;
                 for(int j = 0 ; j < nWorkers__ ; j++){
-                    size += inputStreams[j]->size();
+                    auto tmpSize_ = inputStreams[j]->size();
+                    size += tmpSize_;
                 }
             };
 
             while(nTasks > 0){
                 for(int j = 0 ; j < nWorkers__ ; j++){
-                    nTasks -= outputStreams[j]->size();
+                    auto tmpSize_ = outputStreams[j]->size();
+                    nTasks -= tmpSize_;
                 }
             };
         }

@@ -2,17 +2,19 @@
 #include "raymath.h"
 
 #include <ParticleSystem.hpp>
+#include <DiagnosticLog.hpp>
 
 int main(int argc, char* argv[])
 {
     int numberOfParticles = atoi(argv[1]);
     unsigned int bucketSize = atoi(argv[2]);
+    unsigned int poolSize = atoi(argv[3]);
 
     std::cout << "starting: " << numberOfParticles << " bucket: " << bucketSize << std::endl;
 
     ParticleSystem system;
     system.init(numberOfParticles,bucketSize);
-    system.create_pool();
+    system.create_pool(poolSize);
     int width  = 1000;
     int height = 1000;
 
