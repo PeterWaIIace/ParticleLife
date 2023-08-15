@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 
     ParticleSystem system;
     system.init(numberOfParticles,bucketSize);
-    system.create_pool(poolSize);
+    // system.create_pool(poolSize);
     int width  = 1000;
     int height = 1000;
 
@@ -31,12 +31,9 @@ int main(int argc, char* argv[])
         BeginDrawing();
         ClearBackground(BLACK);
 
-        timeit([&system](){
-            system.step_MT();
-        });
+        system.step();
 
-
-        for(auto particle : system.getParticles())
+        for(auto particle : system.getExperimentalParticlesFromRelationalFrames())
         {
             float x = (particle.x)*width;
             float y = (particle.y)*height;

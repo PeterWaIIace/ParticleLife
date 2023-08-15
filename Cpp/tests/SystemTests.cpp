@@ -60,3 +60,50 @@ TEST(Buckets, Load2x2) {
         ASSERT_GE(sizes,2);
     }
 }
+
+TEST(Buckets, RunOneStepAndCheckSamples) {
+    ParticleSystem system;
+
+    int steps = 1;
+    int bucketSize = 20;
+    int numberOfParticles = 10000;
+    system.init(numberOfParticles,bucketSize);
+
+    system.step();
+
+    ASSERT_EQ(system.getExperimentalParticlesFromRelationalFrames().size(), numberOfParticles);
+}
+
+
+TEST(Buckets, RunTenStepAndCheckSamples) {
+    ParticleSystem system;
+
+    int steps = 10;
+    int bucketSize = 20;
+    int numberOfParticles = 10000;
+    system.init(numberOfParticles,bucketSize);
+
+    for(int n = 0; n < steps ; n++)
+    {
+        system.step();
+    }
+
+    ASSERT_EQ(system.getExperimentalParticlesFromRelationalFrames().size(), numberOfParticles);
+}
+
+
+TEST(Buckets, RunOneHundredStepAndCheckSamples) {
+    ParticleSystem system;
+
+    int steps = 100;
+    int bucketSize = 20;
+    int numberOfParticles = 10000;
+    system.init(numberOfParticles,bucketSize);
+
+    for(int n = 0; n < steps ; n++)
+    {
+        system.step();
+    }
+
+    ASSERT_EQ(system.getExperimentalParticlesFromRelationalFrames().size(), numberOfParticles);
+}

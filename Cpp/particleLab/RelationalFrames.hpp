@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ParticleSystem.hpp"
 #include "DiagnosticLog.hpp"
 #include "Particle.hpp"
 
@@ -89,6 +88,14 @@ class RelationalFrames{
     }
 
     public:
+    RelationalFrames(){
+        this->nBuckets = 1;
+        this->step = 1.0/double(nBuckets)+(1.0/double(nBuckets))/100; // +(1.0/double(nBuckets))/100 is for making sure that x or y divided by /step will never be equal 1.0
+
+        for(int n = 0 ; n < nBuckets*nBuckets ; n++){
+            buckets.push_back(RelationalBucket());
+        }
+    }
 
     RelationalFrames(unsigned int nBuckets){
 
@@ -101,7 +108,7 @@ class RelationalFrames{
 
     };
 
-    RelationalFrames(const RelationalFrames& other)
+    RelationalFrames(RelationalFrames& other)
     {
         nBuckets = other.nBuckets;
         buckets  = other.buckets;
