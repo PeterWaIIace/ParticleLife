@@ -1,17 +1,19 @@
 #include "raylib.h"
 #include "raymath.h"
+#include <unistd.h>
 
 #include <ParticleSystem.hpp>
 
 int main(int argc, char* argv[])
 {
-    int numberOfParticles = atoi(argv[1]);
-    unsigned int bucketSize = atoi(argv[2]);
-    unsigned int poolSize = atoi(argv[3]);
 
-    std::cout << "starting: " << numberOfParticles << " bucket: " << bucketSize << std::endl;
-
-    ParticleSystem system();
+    // ParticleSystem(unsigned int size, 
+    // double dt, 
+    // double rMax, 
+    // double force, 
+    // double friction,
+    // double Beta)
+    ParticleSystem system(10,0.01,0.5,50,0.1,0.2);
     // system.create_pool(poolSize);
     int width  = 1000;
     int height = 1000;
@@ -21,18 +23,16 @@ int main(int argc, char* argv[])
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
     std::cout << "ParticleUniverse generated" << std::endl;
+    // auto [X, Y] = system.step();
 
     //--------------------------------------------------------------------------------------
     while (!WindowShouldClose())
     {
-
+        // sleep(1);
         BeginDrawing();
         ClearBackground(BLACK);
 
-        auto particles = system.step();
-
-        std::vector<float> X = particles.first();
-        std::vector<float> Y = particles.second();
+        auto [X, Y] = system.step();
         
         for(int n = 0 ; n < X.size() ; n++)
         {

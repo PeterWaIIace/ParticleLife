@@ -8,16 +8,12 @@ FetchContent_Declare(raylib
 )
 FetchContent_MakeAvailable(raylib)
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/particleLab)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/particleLib)
 
 add_executable(myproject
     main.cpp)
 
-target_include_directories(myproject
-    PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/particleLab
+target_link_libraries(myproject PRIVATE 
+    raylib
+    particleLib
 )
-
-message(STATUS "path: ${CMAKE_CURRENT_SOURCE_DIR}/particleLab")
-target_link_libraries(myproject PRIVATE raylib)
