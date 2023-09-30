@@ -45,6 +45,8 @@ std::vector<double> get_random_vector(unsigned int size)
 
     // Initialize the vector with random doubles
     std::vector<double> randomdoubles(size);
+
+    #pragma omp parallel for
     for (int i = 0; i < size; ++i) {
         randomdoubles[i] = dis(gen); // Generate a random double and assign it to the vector element
     }
@@ -56,6 +58,8 @@ std::vector<double> get_zero_vector(unsigned int size)
 {
     // Initialize the vector with random doubles
     std::vector<double> zeroVector(size);
+
+    #pragma omp parallel for
     for (int i = 0; i < size; ++i) {
         zeroVector[i] = 0.0; // Generate a random double and assign it to the vector element
     }
@@ -138,6 +142,7 @@ class ParticleSystem
 
             for(int n = 0 ; n < positions.size(); n++)
             {
+                #pragma omp parallel for
                 for(int m = 0 ; m < positions.size(); m++)
                 {
                     distances[n][m] = positions[n] - positions[m];
@@ -153,6 +158,7 @@ class ParticleSystem
 
             for(int n = 0 ; n < distX.size(); n++)
             {
+                #pragma omp parallel for
                 for(int m = 0 ; m < distX.size(); m++)
                 {
                     r[n][m] = sqrt(pow(distX[n][m],2) + pow(distY[n][m],2)) + 0.0000000000000001;
@@ -172,6 +178,7 @@ class ParticleSystem
 
             for(int n = 0 ; n < distX.size(); n++)
             {
+                #pragma omp parallel for
                 for(int m = 0 ; m < distX.size(); m++)
                 {
                     double f = F(r[n][m]/rMax,relations(flavour[n],flavour[m]),Beta);
@@ -181,6 +188,7 @@ class ParticleSystem
                 }
             }
 
+            #pragma omp parallel for
             for(int n = 0 ; n < distX.size(); n++)
             {
                 forces_X[n] *=  friction;
@@ -199,6 +207,7 @@ class ParticleSystem
             std::vector<double> shifted_X(positions_X.size(), 0.0);
             std::vector<double> shifted_Y(positions_Y.size(), 0.0);
 
+            #pragma omp parallel for
             for(int n = 0 ; n < shifted_X.size(); n++)
             {
                 shifted_X[n] = (positions_X[n] + 0.5);
