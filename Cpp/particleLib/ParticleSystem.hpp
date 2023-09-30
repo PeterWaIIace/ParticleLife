@@ -11,6 +11,8 @@
 #include <queue>
 #include <cassert>
 #include <iso646.h>
+#include <omp.h>
+
 
 using namespace std::chrono;
 
@@ -137,59 +139,26 @@ class ParticleSystem
             this->parameter = (force * rMax) * friction;
         }
 
-        std::vector<std::vector<double>> getDists(std::vector<double> positions){
-            std::vector<std::vector<double>> distances(positions.size(),std::vector<double>(positions.size(),0.0));
-
-            for(int n = 0 ; n < positions.size(); n++)
-            {
-                #pragma omp parallel for
-                for(int m = 0 ; m < positions.size(); m++)
-                {
-                    distances[n][m] = positions[n] - positions[m];
-                }
-            }
-            return distances;
-        }
-
-        std::vector<std::vector<double>> getR(std::vector<std::vector<double>> distX , std::vector<std::vector<double>> distY)
-        {
-            assert(distX.size() == distY.size());
-            std::vector<std::vector<double>> r(distX.size(),std::vector<double>(distX.size(),0.0));
-
-            for(int n = 0 ; n < distX.size(); n++)
-            {
-                #pragma omp parallel for
-                for(int m = 0 ; m < distX.size(); m++)
-                {
-                    r[n][m] = sqrt(pow(distX[n][m],2) + pow(distY[n][m],2)) + 0.0000000000000001;
-                }
-            }
-
-            return r;
-        }
-
-
         particles step()
         {
-            auto distX = getDists(positions_X);
-            auto distY = getDists(positions_Y);
 
-            auto r = getR(distX,distY);
-
-            for(int n = 0 ; n < distX.size(); n++)
+            // better to have computation in bigger chunks for parallelism than divided per function
+            // #pragma omp parallel for
+            for(int n = 0 ; n < positions_X.size(); n++)
             {
-                #pragma omp parallel for
-                for(int m = 0 ; m < distX.size(); m++)
+                for(int m = 0 ; m < positions_Y.size(); m++)
                 {
-                    double f = F(r[n][m]/rMax,relations(flavour[n],flavour[m]),Beta);
-                    forces_X[n] += f * (distX[n][m])/r[n][m] * force * rMax;
-                    forces_Y[n] += f * (distY[n][m])/r[n][m] * force * rMax;
+                    double r = sqrt(pow(positions_X[n] - positions_X[m],2) + pow(positions_Y[n] - positions_Y[m],2)) + 0.0000000000000001;
+
+                    double f = F(r/rMax,relations(flavour[n],flavour[m]),Beta);
+                    forces_X[n] += f * (positions_X[n] - positions_X[m])/r * force * rMax;
+                    forces_Y[n] += f * (positions_Y[n] - positions_Y[m])/r * force * rMax;
 
                 }
             }
 
-            #pragma omp parallel for
-            for(int n = 0 ; n < distX.size(); n++)
+            // #pragma omp parallel for
+            for(int n = 0 ; n < forces_X.size(); n++)
             {
                 forces_X[n] *=  friction;
                 forces_Y[n] *=  friction; 

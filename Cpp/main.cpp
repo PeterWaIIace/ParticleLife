@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
     // double Beta)
     double beta = 0.1;
     double range = 0.2;
-    ParticleSystem system(1000,0.01,range,50,0.1,beta);
+    ParticleSystem system(2000,0.01,range,50,0.1,beta);
     // system.create_pool(poolSize);
     int width  = 1000;
     int height = 1000;
