@@ -9,174 +9,184 @@
 #include <math.h>
 #include <mutex>
 #include <queue>
-
-#include "ThreadPool.hpp"
-#include "DiagnosticLog.hpp"
-#include "Particle.hpp"
-#include "HashedBuckets.hpp"
-#include "RelationalFrames.hpp"
+#include <iso646.h>
 
 using namespace std::chrono;
 
-inline Particle task(std::pair<Particle,std::vector<Particle>>& workload){
-    for(auto other : workload.second)
-    {
-        workload.first.interact(other);
-    }
-    // this may mess up calculations so it may be better in other thread
-    workload.first.updateVelocity();
-    workload.first.updatePostion();
+/***
+Matrix parameters:
+positions_X
+positions_Y
+forces_X
+forces_Y
+velocities_X
+velocities_Y
 
-    return workload.first;
+Parameters:
+
+dt
+rMax
+force
+Beta
+
+*/
+
+using particles = std::pair<std::vector<float>,std::vector<float>>
+
+std::vector<float> get_random_vector(unsigned int size)
+{
+    // Seed for the random number generator
+    std::random_device rd;
+    std::mt19937 gen(rd()); // Mersenne Twister PRNG
+
+    // Define the distribution for random floats between 0 and 1
+    std::uniform_real_distribution<float> dis(-0.5, 0.5);
+
+    // Initialize the vector with random floats
+    std::vector<float> randomFloats(size);
+    for (int i = 0; i < size; ++i) {
+        randomFloats[i] = dis(gen); // Generate a random float and assign it to the vector element
+    }
+
+    return randomFloats;
 }
+
+std::vector<float> get_zero_vector(unsigned int size)
+{
+    // Initialize the vector with random floats
+    std::vector<float> zeroVector(size);
+    for (int i = 0; i < size; ++i) {
+        zeroVector[i] = 0.0; // Generate a random float and assign it to the vector element
+    }
+
+    return zeroVector;
+}
+
+inline double F(float distance , float relation, float b)
+{
+    return relation * (1 - fabs(2.0 * distance - 1.0 - b)/(1 - b)) * (double)(b < distance and distance < 1.0) + (distance/b - 1)* (double)(distance < b and distance > 0.0);
+}
+
+inline double dist(double x1, double x2, double y1, double y2)
+{
+    return sqrt(pow(x1 - x2,2) + pow(y1 - y2,2))
+}
+
+inline double relations(double flavour1, double flavour2)
+{
+    return 1;
+}
+
+inline double lim(float val , float lim)
+{
+    float sign = val/fabs(val) * lim;
+    return -sign + fmod(val,lim);
+}
+
 
 class ParticleSystem
 {
-    private:
-        // std::vector<Particle> frame;
-        // std::vector<Particle> nextFrame;
-
-        int bucketSize = 1;
-        std::mutex g_bucket_mutex;
-
-        Buckets buckets;
-        Buckets nextBuckets;
-
-        RelationalFrames relFrameNow;
-        RelationalFrames relFrameNext;
-
-        Pool<std::pair<Particle,std::vector<Particle>>,Particle> workers;
-
     public:
-        ParticleSystem(){};
-        void init(int initSize = 10000, unsigned int bucketSize = 1)
+        ParticleSystem(unsigned int size, 
+        float dt, 
+        float rMax, 
+        float force, 
+        float Beta)
         {
-            double lower_bound = 0.0;
-            double upper_bound = 1.0;
+            positions_X = get_random_vector(size);
+            positions_Y = get_random_vector(size);
 
-            this->bucketSize  = bucketSize;
-            this->buckets     = Buckets(bucketSize,bucketSize);
-            this->nextBuckets = Buckets(bucketSize,bucketSize);
+            forces_X = get_zero_vector(size);
+            forces_Y = get_zero_vector(size);
 
-            this->relFrameNow = RelationalFrames(bucketSize);
-            this->relFrameNext= RelationalFrames(bucketSize);
+            velocities_X = get_zero_vector(size);
+            velocities_Y = get_zero_vector(size);
 
-            std::uniform_real_distribution<double> unif(lower_bound,upper_bound);
-            std::default_random_engine re;
+            flavour = get_zero_vector(size);
 
-            for(int i = 0 ; i < initSize ; i++)
-            {
-                this->buckets.insert(Particle(unif(re),unif(re)));
-                this->relFrameNow.insert(Particle(unif(re),unif(re)));
-            }
+            dt = dt;
+            rMax = rMax;
+            force = force;
+            Beta = Beta;
         }
 
-
-        // void step(void (interact__)(Particle&,Particle&),void (updateVelocity__)(Particle&))
-        void step()
-        {
-
-            int count =  0;
-            int countBuckets = 0;
-
-            for(auto& bucket : relFrameNow.getRelations())
+        std::vector<std::vector<double>> getDists(std::vector<double> positions){
+            std::vector<std::vector<double>> distances;
+            for(int n = 0 ; n < positions.size(); n++)
             {
-                countBuckets++;
-
-                auto& particle = bucket.first;
-                auto others   = bucket.second;
-;
-                for(auto other : others)
+                for(int m = 0 ; m < positions.size(); m++)
                 {
-                    // particle.interact(other,interact__);
-                    particle.interact(*other);
-                }
-
-                // particle.updateVelocity(updateVelocity__);
-                particle.updateVelocity();
-                particle.updatePostion();
-
-                relFrameNext.insert(particle);
-                count++;
-
-            }
-            relFrameNow = relFrameNext;
-            relFrameNext = RelationalFrames(bucketSize);
-        }
-
-        void create_pool(int poolSize = 1)
-        {
-            workers = Pool<std::pair<Particle,std::vector<Particle>>,Particle>(
-                poolSize,
-                task
-            );
-        };
-
-        void step_MT()
-        {
-            timeit([this](){
-            for(auto& bucket : buckets)
-            {
-                auto frame =  bucket.first->pop();
-
-                while(frame->size() > 0)
-                {
-                    auto particle = frame->back();
-                    frame->pop_back();
-
-                    workers.push(std::make_pair(particle,*frame));
+                    distances[n][m] = positions[n] - position[m];
                 }
             }
-            },0,"pushing: ");
-
-            // diagnostics
-
-            timeit([this](){
-            workers.await();
-            },0,"awaiting: ");
-
-            timeit([this](){
-            for(auto particle : workers.getResults()){
-                nextBuckets.insert(particle);
-            };
-            },0,"obtaining results: ");
-
-            buckets = nextBuckets;
-            nextBuckets = Buckets(bucketSize,bucketSize);
+            return distances;
         }
 
-        void __testCreatePairs(){
-            for(auto& bucket : buckets)
-            {
-                auto frame =  bucket.first->pop();
+        std::vector<std::vector<double>> getR(std::vector<std::vector<double>> distX , std::vector<std::vector<double>> distY)
+        {
+            std::vector<std::vector<double>> r;
 
-                while(frame->size() > 0)
+            assert(distX.size() == distY.size());
+
+            for(int n = 0 ; n < distX.size(); n++)
+            {
+                for(int m = 0 ; m < distX.size(); m++)
                 {
-                    auto tmp = std::make_pair(frame->back(),bucket.second);
-                    frame->pop_back();
+                    r[n][m] = sqrt(pow(distX[n][m],2) + pow(distY[n][m],2));
                 }
-
             }
+
+            return r;
         }
 
-        std::vector<Particle> getParticles()
-        {
-            auto tmp = buckets.getAllBuckets();
-            return tmp;
-        };
 
-        std::vector<Particle> getExperimentalParticlesFromRelationalFrames()
+        particles step()
         {
-            std::vector<Particle> particles;
-            for(auto& bucket : relFrameNow.getRelations())
+            auto distX = getDists(positionsX);
+            auto distY = getDists(positionsY);
+
+            float r = getR(distX,distY);
+
+            for(int n = 0 ; n < distX.size(); n++)
             {
-                particles.push_back(bucket.first);
-            }
-            return particles;
-        };
+                for(int m = 0 ; m < distX.size(); m++)
+                {
+                    float f = F(r[n][m]/rMax,relations(flavour[n],flavour[m]),Beta);
 
-        size_t getRelations()
-        {
-            return relFrameNow.size();
-        };
+                    forces_X[n] += f * (postions_X[n] - postions_X[m])/r * (f * rMax) * friction;
+                    forces_Y[n] += f * (postions_X[n] - postions_X[m])/r * (f * rMax) * friction;
+                }
+            }
+
+
+            for(int n = 0 ; n < distX.size(); n++)
+            {
+                velocities_X[n]= forces_X[n] * dt;
+                velocities_Y[n]= forces_Y[n] * dt;
+
+                positions_X[n] += velocities_X * dt;
+                positions_Y[n] += velocities_Y * dt;
+
+                positions_X[n] = lim(positions_X[n],0.5);
+                positions_Y[n] = lim(positions_Y[n],0.5);   
+            }
+
+            return std::make_pair(positions_X, positions_Y);
+        }
+
+    private:
+        std::vector<float> positions_X;
+        std::vector<float> positions_Y;
+        std::vector<float> forces_X;
+        std::vector<float> forces_Y;
+        std::vector<float> velocities_X;
+        std::vector<float> velocities_Y;
+
+        std::vector<float> flavour;
+       
+        float dt;
+        float rMax;
+        float force;
+        float Beta;
+
 };

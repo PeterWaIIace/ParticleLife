@@ -2,7 +2,6 @@
 #include "raymath.h"
 
 #include <ParticleSystem.hpp>
-#include <DiagnosticLog.hpp>
 
 int main(int argc, char* argv[])
 {
@@ -12,8 +11,7 @@ int main(int argc, char* argv[])
 
     std::cout << "starting: " << numberOfParticles << " bucket: " << bucketSize << std::endl;
 
-    ParticleSystem system;
-    system.init(numberOfParticles,bucketSize);
+    ParticleSystem system();
     // system.create_pool(poolSize);
     int width  = 1000;
     int height = 1000;
@@ -31,12 +29,15 @@ int main(int argc, char* argv[])
         BeginDrawing();
         ClearBackground(BLACK);
 
-        system.step();
+        auto particles = system.step();
 
-        for(auto particle : system.getExperimentalParticlesFromRelationalFrames())
+        std::vector<float> X = particles.first();
+        std::vector<float> Y = particles.second();
+        
+        for(int n = 0 ; n < X.size() ; n++)
         {
-            float x = (particle.x)*width;
-            float y = (particle.y)*height;
+            float x = (X[n])*width;
+            float y = (Y[n])*height;
             DrawCircleGradient(x,y,2,Fade(BLUE,1),Fade(BLUE,1));
             // DrawCircleGradient(x,y,10,Fade(allColors[particle.color],0.2),Fade(allColors[particle.color],0.0));
         }
