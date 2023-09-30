@@ -65,7 +65,7 @@ std::vector<double> get_zero_vector(unsigned int size)
 
 inline double F(double distance , double relation, double b)
 {
-    return relation * (1 - fabs(2.0 * distance - 1.0 - b)/(1 - b)) * (double)(b <= distance and distance < 1.0) + (distance/b - 1)* (double)(distance < b and distance > 0.0000000001);
+    return relation * (1 - fabs(2.0 * distance - 1.0 - b)/(1 - b)) * (double)(b < distance and distance < 1.0) + (-1)*(distance/b - 1)* (double)(distance <= b and distance > 0.0000000001);
 }
 
 inline double relations(double flavour1, double flavour2)
@@ -175,15 +175,17 @@ class ParticleSystem
                 for(int m = 0 ; m < distX.size(); m++)
                 {
                     double f = F(r[n][m]/rMax,relations(flavour[n],flavour[m]),Beta);
-
-                    forces_X[n] += f * (distX[n][m])/r[n][m] * parameter;
-                    forces_Y[n] += f * (distY[n][m])/r[n][m] * parameter;
+                    forces_X[n] += f * (distX[n][m])/r[n][m] * force * rMax;
+                    forces_Y[n] += f * (distY[n][m])/r[n][m] * force * rMax;
 
                 }
             }
 
             for(int n = 0 ; n < distX.size(); n++)
             {
+                forces_X[n] *=  friction;
+                forces_Y[n] *=  friction; 
+
                 velocities_X[n]= forces_X[n] * dt;
                 velocities_Y[n]= forces_Y[n] * dt;
 
