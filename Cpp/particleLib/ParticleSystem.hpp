@@ -49,7 +49,6 @@ std::vector<T> get_random_vector(unsigned int size,T lower, T upper)
     // Initialize the vector with random doubles
     std::vector<T> randomVars(size);
 
-    #pragma omp parallel for
     for (int i = 0; i < size; ++i) {
         randomVars[i] = dis(gen); // Generate a random double and assign it to the vector element
     }
@@ -68,7 +67,6 @@ std::vector<int> get_random_vector<int>(unsigned int size, int lower, int upper)
     // Initialize the vector with random doubles
     std::vector<int> randomVars(size);
 
-    #pragma omp parallel for
     for (int i = 0; i < size; ++i) {
         randomVars[i] = dis(gen); // Generate a random double and assign it to the vector element
     }
@@ -90,7 +88,7 @@ template<typename T> std::vector<T> get_zero_vector(unsigned int size)
 
 inline double F(double distance , double relation, double b)
 {
-    return relation * (1 - fabs(2.0 * distance - 1.0 - b)/(1 - b)) * (double)(b < distance and distance < 1.0) + (-1)*(distance/b - 1)* (double)(distance <= b and distance > 0.0000000001);
+    return relation * (1 - fabs(2.0 * distance - 1.0 - b)/(1 - b)) * (double)(b < distance and distance < 1.0) + (distance/b - 1)* (double)(distance <= b and distance > 0.0000001);
 }
 
 inline double lim(double val , double lim)
@@ -140,6 +138,9 @@ class ParticleSystem
             velocities_X = get_zero_vector<double>(size);
             velocities_Y = get_zero_vector<double>(size);
 
+            shifted_X = get_zero_vector<double>(size);
+            shifted_Y = get_zero_vector<double>(size);
+
             flavour = get_random_vector<int>(size,0,flavourMatrix.size()-1);
 
             this->flavours = flavourMatrix;
@@ -162,17 +163,24 @@ class ParticleSystem
         {
 
             // better to have computation in bigger chunks for parallelism than divided per function
-            
             #pragma omp parallel for
             for(int n = 0 ; n < positions_X.size(); n++)
             {
-                for(int m = 0 ; m < positions_Y.size(); m++)
+                for(int m = n+1 ; m < positions_X.size(); m++)
                 {
-                    double r = sqrt(pow(positions_X[n] - positions_X[m],2) + pow(positions_Y[n] - positions_Y[m],2)) + 0.0000000000000001;
+                    double distX = lim(positions_X[n] - positions_X[m],1.0);
+                    double distY = lim(positions_Y[n] - positions_Y[m],1.0);
+                    double r = sqrt(pow(distX,2) + pow(distY,2)) + 0.0000000000000001;
 
-                    double f = F(r/rMax,flavours[flavour[n]][flavour[m]],Beta);
-                    forces_X[n] += f * (positions_X[n] - positions_X[m])/r * force * rMax;
-                    forces_Y[n] += f * (positions_Y[n] - positions_Y[m])/r * force * rMax;
+                    double f = -1.0*F(r/rMax,flavours[flavour[n]][flavour[m]],Beta);
+                    forces_X[n] += f * (distX)/r * force * rMax;
+                    forces_Y[n] += f * (distY)/r * force * rMax;
+
+                    distX = lim(positions_X[m] - positions_X[n],1.0);
+                    distY = lim(positions_Y[m] - positions_Y[n],1.0);
+                    f = -1.0*F(r/rMax,flavours[flavour[m]][flavour[n]],Beta);
+                    forces_X[m] += f * (distX)/r * force * rMax;
+                    forces_Y[m] += f * (distY)/r * force * rMax;
 
                 }
             }
@@ -180,25 +188,21 @@ class ParticleSystem
             #pragma omp parallel for
             for(int n = 0 ; n < forces_X.size(); n++)
             {
-                forces_X[n] *=  friction;
-                forces_Y[n] *=  friction; 
+                forces_X[n] *= friction;
+                forces_Y[n] *= friction; 
 
-                velocities_X[n]= forces_X[n] * dt;
-                velocities_Y[n]= forces_Y[n] * dt;
+                velocities_X[n] *= friction;
+                velocities_Y[n] *= friction;
+
+                velocities_X[n] += forces_X[n] * dt;
+                velocities_Y[n] += forces_Y[n] * dt;
 
                 positions_X[n] += velocities_X[n] * dt;
                 positions_Y[n] += velocities_Y[n] * dt;
 
                 positions_X[n] = lim(positions_X[n],0.5);
                 positions_Y[n] = lim(positions_Y[n],0.5);   
-            }
 
-            std::vector<double> shifted_X(positions_X.size(), 0.0);
-            std::vector<double> shifted_Y(positions_Y.size(), 0.0);
-
-            #pragma omp parallel for
-            for(int n = 0 ; n < shifted_X.size(); n++)
-            {
                 shifted_X[n] = (positions_X[n] + 0.5);
                 shifted_Y[n] = (positions_Y[n] + 0.5);
             }
@@ -214,6 +218,8 @@ class ParticleSystem
         std::vector<double> forces_Y;
         std::vector<double> velocities_X;
         std::vector<double> velocities_Y;
+        std::vector<double> shifted_X;
+        std::vector<double> shifted_Y;
 
         std::vector<int> flavour;
         std::vector<std::vector<double>> flavours;
