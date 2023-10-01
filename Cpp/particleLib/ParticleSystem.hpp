@@ -119,9 +119,6 @@ class ParticleSystem
             positions_X = get_random_vector(size);
             positions_Y = get_random_vector(size);
 
-            showVector(positions_X);
-            showVector(positions_Y);
-
             forces_X = get_zero_vector(size);
             forces_Y = get_zero_vector(size);
 
@@ -143,7 +140,8 @@ class ParticleSystem
         {
 
             // better to have computation in bigger chunks for parallelism than divided per function
-            // #pragma omp parallel for
+            
+            #pragma omp parallel for
             for(int n = 0 ; n < positions_X.size(); n++)
             {
                 for(int m = 0 ; m < positions_Y.size(); m++)
@@ -157,7 +155,7 @@ class ParticleSystem
                 }
             }
 
-            // #pragma omp parallel for
+            #pragma omp parallel for
             for(int n = 0 ; n < forces_X.size(); n++)
             {
                 forces_X[n] *=  friction;
