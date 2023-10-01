@@ -36,34 +36,53 @@ Beta
 
 using particles = std::pair<std::vector<double>,std::vector<double>>;
 
-std::vector<double> get_random_vector(unsigned int size)
+template<typename T> 
+std::vector<T> get_random_vector(unsigned int size,T lower, T upper)
 {
     // Seed for the random number generator
     std::random_device rd;
     std::mt19937 gen(rd()); // Mersenne Twister PRNG
 
     // Define the distribution for random doubles between 0 and 1
-    std::uniform_real_distribution<double> dis(-0.5, 0.5);
-
+    std::uniform_real_distribution<T> dis(lower, upper);
+    
     // Initialize the vector with random doubles
-    std::vector<double> randomdoubles(size);
+    std::vector<T> randomVars(size);
 
     #pragma omp parallel for
     for (int i = 0; i < size; ++i) {
-        randomdoubles[i] = dis(gen); // Generate a random double and assign it to the vector element
+        randomVars[i] = dis(gen); // Generate a random double and assign it to the vector element
     }
-
-    return randomdoubles;
+    return randomVars;
 }
 
-std::vector<double> get_zero_vector(unsigned int size)
-{
+template<>
+std::vector<int> get_random_vector<int>(unsigned int size, int lower, int upper) {
+    // Seed for the random number generator
+    std::random_device rd;
+    std::mt19937 gen(rd()); // Mersenne Twister PRNG
+
+    // Define the distribution for random doubles between 0 and 1
+    std::uniform_int_distribution<int> dis(lower, upper);
+    
     // Initialize the vector with random doubles
-    std::vector<double> zeroVector(size);
+    std::vector<int> randomVars(size);
 
     #pragma omp parallel for
     for (int i = 0; i < size; ++i) {
-        zeroVector[i] = 0.0; // Generate a random double and assign it to the vector element
+        randomVars[i] = dis(gen); // Generate a random double and assign it to the vector element
+    }
+    return randomVars;
+}
+
+template<typename T> std::vector<T> get_zero_vector(unsigned int size)
+{
+    // Initialize the vector with random doubles
+    std::vector<T> zeroVector(size);
+
+    #pragma omp parallel for
+    for (int i = 0; i < size; ++i) {
+        zeroVector[i] = static_cast<T>(0.0); // Generate a random double and assign it to the vector element
     }
 
     return zeroVector;
@@ -72,11 +91,6 @@ std::vector<double> get_zero_vector(unsigned int size)
 inline double F(double distance , double relation, double b)
 {
     return relation * (1 - fabs(2.0 * distance - 1.0 - b)/(1 - b)) * (double)(b < distance and distance < 1.0) + (-1)*(distance/b - 1)* (double)(distance <= b and distance > 0.0000000001);
-}
-
-inline double relations(double flavour1, double flavour2)
-{
-    return -1;
 }
 
 inline double lim(double val , double lim)
@@ -114,18 +128,21 @@ class ParticleSystem
         double rMax, 
         double force, 
         double friction,
-        double Beta)
+        double Beta,
+        std::vector<std::vector<double>> flavourMatrix)
         {
-            positions_X = get_random_vector(size);
-            positions_Y = get_random_vector(size);
+            positions_X = get_random_vector<double>(size,-0.5,0.5);
+            positions_Y = get_random_vector<double>(size,-0.5,0.5);
 
-            forces_X = get_zero_vector(size);
-            forces_Y = get_zero_vector(size);
+            forces_X = get_zero_vector<double>(size);
+            forces_Y = get_zero_vector<double>(size);
 
-            velocities_X = get_zero_vector(size);
-            velocities_Y = get_zero_vector(size);
+            velocities_X = get_zero_vector<double>(size);
+            velocities_Y = get_zero_vector<double>(size);
 
-            flavour = get_zero_vector(size);
+            flavour = get_random_vector<int>(size,0,flavourMatrix.size()-1);
+
+            this->flavours = flavourMatrix;
 
             this->dt = dt;
             this->Beta = Beta; 
@@ -134,6 +151,11 @@ class ParticleSystem
             this->friction = friction;
 
             this->parameter = (force * rMax) * friction;
+        }
+
+        std::vector<int> getFlavour()
+        {
+            return this->flavour;
         }
 
         particles step()
@@ -148,7 +170,7 @@ class ParticleSystem
                 {
                     double r = sqrt(pow(positions_X[n] - positions_X[m],2) + pow(positions_Y[n] - positions_Y[m],2)) + 0.0000000000000001;
 
-                    double f = F(r/rMax,relations(flavour[n],flavour[m]),Beta);
+                    double f = F(r/rMax,flavours[flavour[n]][flavour[m]],Beta);
                     forces_X[n] += f * (positions_X[n] - positions_X[m])/r * force * rMax;
                     forces_Y[n] += f * (positions_Y[n] - positions_Y[m])/r * force * rMax;
 
@@ -185,6 +207,7 @@ class ParticleSystem
         }
 
     private:
+
         std::vector<double> positions_X;
         std::vector<double> positions_Y;
         std::vector<double> forces_X;
@@ -192,7 +215,8 @@ class ParticleSystem
         std::vector<double> velocities_X;
         std::vector<double> velocities_Y;
 
-        std::vector<double> flavour;
+        std::vector<int> flavour;
+        std::vector<std::vector<double>> flavours;
        
         double dt;
         double rMax;

@@ -4,8 +4,17 @@
 
 #include <ParticleSystem.hpp>
 
+Color cflavours[6] = {BLUE,RED,GREEN,PINK,YELLOW,PURPLE};
 int main(int argc, char* argv[])
 {
+    std::vector<std::vector<double>> flavourMatrix = {
+        {-1.0,1.0,0.1,0.5,-0.1,0.1},
+        {-1.0,0.2,0.1,0.2,0.1,0.1},
+        {-1.0,1.0,0.1,0.5,-0.1,0.1},
+        {-1.0,0.2,0.1,0.2,0.1,0.1},
+        {-1.0,1.0,0.1,0.5,-0.1,0.1},
+        {-1.0,0.2,0.1,0.2,0.1,0.1}
+    };
 
     // ParticleSystem(unsigned int size, 
     // double dt, 
@@ -15,7 +24,7 @@ int main(int argc, char* argv[])
     // double Beta)
     double beta = 0.1;
     double range = 0.2;
-    ParticleSystem system(2000,0.01,range,50,0.1,beta);
+    ParticleSystem system(1000,0.01,range,50,0.1,beta,flavourMatrix);
     // system.create_pool(poolSize);
     int width  = 1000;
     int height = 1000;
@@ -27,6 +36,7 @@ int main(int argc, char* argv[])
     std::cout << "ParticleUniverse generated" << std::endl;
     // auto [X, Y] = system.step();
 
+    auto flavour = system.getFlavour();
     //--------------------------------------------------------------------------------------
     while (!WindowShouldClose())
     {
@@ -41,7 +51,7 @@ int main(int argc, char* argv[])
             float x = (X[n])*width;
             float y = (Y[n])*height;
             Vector2 center = {.x = x, .y = y};
-            DrawCircleGradient(x,y,2,Fade(BLUE,1),Fade(BLUE,1));
+            DrawCircleGradient(x,y,2,Fade(cflavours[flavour[n]],1),Fade(cflavours[flavour[n]],1));
 
             #ifdef DEBUG
             DrawCircleGradient(x,y,width*beta,Fade(BLUE,0),Fade(GREEN,1));
