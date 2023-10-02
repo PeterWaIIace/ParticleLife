@@ -8,7 +8,9 @@ Color cflavours[6] = {BLUE,RED,GREEN,PINK,YELLOW,PURPLE};
 int main(int argc, char* argv[])
 {
     std::vector<std::vector<double>> flavourMatrix = {
-        {1.0},
+        {0.4,0.0,0.1},
+        {0.6,-0.5,0.0},
+        {0.4,0.0,-1.0},
     };
 
     // ParticleSystem(unsigned int size, 
@@ -17,9 +19,9 @@ int main(int argc, char* argv[])
     // double force, 
     // double friction,
     // double Beta)
-    double beta = 0.02;
-    double range = 0.5;
-    ParticleSystem system(100,0.01,range,50,0.1,beta,flavourMatrix);
+    double beta = 0.05;
+    double range = 0.2;
+    ParticleSystem system(5000,0.05,range,100,0.01,beta,flavourMatrix);
     // system.create_pool(poolSize);
     int width  = 1000;
     int height = 1000;
@@ -48,6 +50,7 @@ int main(int argc, char* argv[])
             Vector2 center = {.x = x, .y = y};
             DrawCircleGradient(x,y,2,Fade(cflavours[flavour[n]],1),Fade(cflavours[flavour[n]],1));
 
+            // #define DEBUG
             #ifdef DEBUG
             DrawCircleGradient(x,y,width*beta,Fade(BLUE,0),Fade(GREEN,0.2));
             DrawRing(center,width*range,width*range-1,0, 360, 0,Fade(RED,1));
