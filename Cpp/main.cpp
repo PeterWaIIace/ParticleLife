@@ -8,9 +8,7 @@ Color cflavours[6] = {BLUE,RED,GREEN,PINK,YELLOW,PURPLE};
 int main(int argc, char* argv[])
 {
     std::vector<std::vector<double>> flavourMatrix = {
-        {0.4,0.0,0.1},
-        {0.6,-0.5,0.0},
-        {0.4,0.0,-1.0},
+        {1.0},
     };
 
     // ParticleSystem(unsigned int size, 
@@ -21,7 +19,7 @@ int main(int argc, char* argv[])
     // double Beta)
     double beta = 0.05;
     double range = 0.2;
-    ParticleSystem system(5000,0.05,range,100,0.01,beta,flavourMatrix);
+    ParticleSystem system(10000,0.01,range,100,0.1,beta,flavourMatrix);
     // system.create_pool(poolSize);
     int width  = 1000;
     int height = 1000;

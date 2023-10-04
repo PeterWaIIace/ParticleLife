@@ -13,6 +13,7 @@
 #include <iso646.h>
 #include <omp.h>
 
+#define NULL_AVOID 0.00000001
 
 using namespace std::chrono;
 
@@ -43,10 +44,26 @@ inline double lim(double val , double lim)
 
 inline int mod(int val , int lim)
 {
-    int sign = val/abs(val) * lim * (val < 0);
+    int sign = val/fabs(val + NULL_AVOID) * lim * (val <= 0);
     return -sign + val % lim;
 }
 
+std::pair<int,int> getSwing(float rMax,float dHash)
+{
+    int swing = ceil((rMax)/(1.0/dHash));
+
+    int swing_low = swing; 
+    int swing_high = swing; 
+
+    if((swing_low + 1 + swing_high) - dHash  > 0)
+    {
+        auto diff = (swing_low + 1 + swing_high) - dHash;
+        swing_high -= ceil(diff/2);
+        swing_low  -= floor(diff/2);
+    }
+
+    return std::make_pair(swing_low,swing_high);
+}
 
 template<typename T> 
 std::vector<T> get_random_vector(unsigned int size,T lower, T upper)
@@ -100,7 +117,7 @@ template<typename T> std::vector<T> get_zero_vector(unsigned int size)
 
 inline double F(double distance , double relation, double b)
 {
-    return relation * (1 - fabs(2.0 * distance - 1.0 - b)/(1 - b)) * (double)(b < distance and distance < 1.0) + (distance/b - 1)* (double)(distance <= b and distance > 0.0000001);
+    return relation * (1 - fabs(2.0 * distance - 1.0 - b)/(1 - b)) * (double)(b < distance and distance < 1.0) + (distance/b - 1)* (double)(distance <= b and distance > NULL_AVOID);
 }
 
 void showVector(std::vector<double> vec){
@@ -185,48 +202,38 @@ class ParticleSystem
         particles step()
         {
             // better to have computation in bigger chunks for parallelism than divided per function
-            int swing = 1;
-            #pragma omp parallel for
-            for(int i = 0; i < spatialHash.size(); i++){
-                for(int j = 0; j < spatialHash[i].size(); j++){
-                    
-                    for(int index1 = 0 ; index1 < spatialHash[i][j].size(); index1++)
+            auto[swing_low,swing_high] = getSwing(rMax, dHash);
+
+            #pragma omp parallel for      
+            for(auto[first,indecies] : spatialVector)
+            {
+                double f1,f2,r,distX1,distX2,distY1,distY2;
+                for(auto second : indecies)
+                {
+                    if(first == second)
                     {
-                        int first = spatialHash[i][j][index1];
-                        double f1,f2,r,distX1,distX2,distY1,distY2; 
+                        break;
+                    }
 
-                        for(int mod_i = i-swing ; mod_i <= i+swing ; mod_i++)
-                        {
-                            for(int mod_j = j-swing ; mod_j <= j+swing ; mod_j++)
-                            {
-                                for(int index2 = 0; index2 < spatialHash[mod(mod_i,dHash)][mod(mod_j,dHash)].size(); index2++)
-                                {
-                                    int second = spatialHash[mod(mod_i,dHash)][mod(mod_j,dHash)][index2];
+                    distX1 = lim(positions_X[first] - positions_X[second],1.0);
+                    distY1 = lim(positions_Y[first] - positions_Y[second],1.0);
 
-                                    if(first == second)
-                                    {
-                                        break;
-                                    }
+                    r = sqrt(pow(distX1,2) + pow(distY1,2)) + 0.0000000000000001;
+                    
+                    f1 = -1.0*F(r/rMax,flavours[first][second],Beta);
 
-                                    distX1 = lim(positions_X[first] - positions_X[second],1.0);
-                                    distY1 = lim(positions_Y[first] - positions_Y[second],1.0);
-
-                                    r = sqrt(pow(distX1,2) + pow(distY1,2)) + 0.0000000000000001;
-                                    
-                                    f1 = -1.0*F(r/rMax,flavours[first][second],Beta);
-
-                                    forces_X[first] += f1 * (distX1)/r * force * rMax;
-                                    forces_Y[first] += f1 * (distY1)/r * force * rMax;
-                                }
-                            }
-                        }
-                    }        
+                    forces_X[first] += f1 * (distX1)/r * force * rMax;
+                    forces_Y[first] += f1 * (distY1)/r * force * rMax;
                 }
             }
             
-            for(int n = 0 ; n < spatialHash.size(); n++){
-                for(int m = 0 ; m < spatialHash[n].size(); m++){
-                    spatialHash[n][m].erase(spatialHash[n][m].begin(),spatialHash[n][m].end());
+
+            spatialVector.erase(spatialVector.begin(),spatialVector.end());
+
+            #pragma omp parallel for
+            for(int n = 0 ; n < spatialHash.size() ; n++){
+                for(int m = 0 ; m < spatialHash[n].size() ; m++){
+                    spatialHash[n][m].erase(spatialHash[n][m].begin(),spatialHash[n][m].end());  
                 }
             }
 
@@ -274,11 +281,26 @@ class ParticleSystem
         }
 
         void encode(double X, double Y, int index){
+            int n = int(X * (dHash - 0.01));
+            int m = int(Y * (dHash - 0.01));
+            auto[swing_low,swing_high] = getSwing(rMax, dHash);
+
+            std::vector<int> indecies;
+            
+            for(int mod_i = (n-swing_low) ; mod_i <= (n+swing_high) ; mod_i++)
+            {
+                for(int mod_j = (m-swing_low) ; mod_j <= (m+swing_high) ; mod_j++)
+                {
+                    for(int index = 0; index < spatialHash[mod(mod_i,dHash)][mod(mod_j,dHash)].size(); index++)
+                    {
+                        indecies.push_back(spatialHash[mod(mod_i,dHash)][mod(mod_j,dHash)][index]);
+                    }
+                }
+            }
+                
             #pragma omp critical
             {
-                int n = int(X * (dHash - 0.01));
-                int m = int(Y * (dHash - 0.01));
-
+                spatialVector.push_back(std::make_pair(index,indecies));
                 spatialHash[n][m].push_back(index);
             }
         }
@@ -297,8 +319,9 @@ class ParticleSystem
         std::vector<std::vector<double>> flavours;
 
         std::vector<std::vector<std::vector<int>>> spatialHash;
+        std::vector<std::pair<int,std::vector<int>>> spatialVector;
 
-        int dHash = 10;
+        int dHash = 12;
 
         double dt;
         double rMax;
