@@ -62,7 +62,7 @@ std::pair<int,int> getSwing(float rMax,float dHash)
         swing_low  -= floor(diff/2);
     }
 
-    return std::make_pair(swing_low,swing_high);
+    return std::make_pair(1,1);
 }
 
 template<typename T> 
@@ -154,6 +154,14 @@ class ParticleSystem
         std::vector<std::vector<double>> flavourMatrix
         )
         {
+            this->dt = dt;
+            this->Beta = Beta; 
+            this->rMax = rMax;
+            this->force = force;
+            this->friction = friction;
+
+            this->parameter = (force * rMax) * friction;
+
             positions_X = get_random_vector<double>(size,-0.5,0.5);
             positions_Y = get_random_vector<double>(size,-0.5,0.5);
 
@@ -168,6 +176,7 @@ class ParticleSystem
 
             flavour = get_random_vector<int>(size,0,flavourMatrix.size()-1);
 
+            this->spatialVector = std::vector<std::vector<int>>(size,std::vector<int>());
             this->spatialHash = std::vector<std::vector<std::vector<int>>>(
                 dHash,
                 std::vector<std::vector<int>>(
@@ -178,20 +187,32 @@ class ParticleSystem
             for(int n = 0 ; n < positions_X.size(); n++){
                 shifted_X[n] = (positions_X[n] + 0.5);
                 shifted_Y[n] = (positions_Y[n] + 0.5);
-        
-                encode(shifted_X[n],shifted_Y[n],n);
             };
+
+            auto[swing_low,swing_high] = getSwing(rMax, dHash);
+            for(int i = 0 ; i < size ; i++){
+
+                int n = int(shifted_X[i] * (dHash - 0.01));
+                int m = int(shifted_Y[i] * (dHash - 0.01));
+                std::vector<std::pair<int,int>> indecies;
                 
+                for(int mod_i = (n-swing_low) ; mod_i <= (n+swing_high) ; mod_i++)
+                {
+                    for(int mod_j = (m-swing_low) ; mod_j <= (m+swing_high) ; mod_j++)
+                    {
+                        indecies.push_back(std::make_pair(mod(mod_i,dHash),mod(mod_j,dHash)));
+                    }
+                }
+                // make new spatial cors
+                spatialCoors.push_back(std::make_pair(std::make_pair(n,m),indecies));
+            }
+
+            for(int n = 0 ; n < positions_X.size(); n++){
+                encode(shifted_X[n],shifted_Y[n],n,swing_low,swing_high);
+            };
+
 
             this->flavours = self_flauvoring(flavour,flavourMatrix);
-
-            this->dt = dt;
-            this->Beta = Beta; 
-            this->rMax = rMax;
-            this->force = force;
-            this->friction = friction;
-
-            this->parameter = (force * rMax) * friction;
         }
 
         std::vector<int> getFlavour()
@@ -205,10 +226,10 @@ class ParticleSystem
             auto[swing_low,swing_high] = getSwing(rMax, dHash);
 
             #pragma omp parallel for      
-            for(auto[first,indecies] : spatialVector)
+            for(int first = 0 ; first < spatialVector.size() ; first++)
             {
                 double f1,f2,r,distX1,distX2,distY1,distY2;
-                for(auto second : indecies)
+                for(auto second : spatialVector[first])
                 {
                     if(first == second)
                     {
@@ -226,11 +247,7 @@ class ParticleSystem
                     forces_Y[first] += f1 * (distY1)/r * force * rMax;
                 }
             }
-            
 
-            spatialVector.erase(spatialVector.begin(),spatialVector.end());
-
-            #pragma omp parallel for
             for(int n = 0 ; n < spatialHash.size() ; n++){
                 for(int m = 0 ; m < spatialHash[n].size() ; m++){
                     spatialHash[n][m].erase(spatialHash[n][m].begin(),spatialHash[n][m].end());  
@@ -257,8 +274,19 @@ class ParticleSystem
 
                 shifted_X[n] = (positions_X[n] + 0.5);
                 shifted_Y[n] = (positions_Y[n] + 0.5);
-                
-                encode(shifted_X[n],shifted_Y[n],n);
+
+                #pragma omp critical
+                {
+                    // you need to push shifted as there are from 0 to 1 
+                    encode(shifted_X[n],shifted_Y[n],n,swing_high,swing_low);
+                    // encodeCoors(shifted_X[n],shifted_Y[n],n,swing_low,swing_high);
+                }
+            }
+
+            auto[lowSwing,highSwing] = getSwing(rMax,dHash);
+            for(int n = 0 ; n < shifted_X.size(); n++)
+            {
+                getSpatialVector(shifted_X[n],shifted_Y[n],n,lowSwing,highSwing);
             }
 
             return std::make_pair(shifted_X, shifted_Y);
@@ -280,31 +308,56 @@ class ParticleSystem
             return flavours;
         }
 
-        void encode(double X, double Y, int index){
+        void encode(double X, double Y, int index, int swing_low,int swing_high){    
             int n = int(X * (dHash - 0.01));
             int m = int(Y * (dHash - 0.01));
-            auto[swing_low,swing_high] = getSwing(rMax, dHash);
 
+            spatialHash[n][m].push_back(index);
+        }
+
+        void getSpatialVector(double X, double Y, int index, int swing_low,int swing_high)
+        {
+            int n = int(X * (dHash - 0.01));
+            int m = int(Y * (dHash - 0.01));
             std::vector<int> indecies;
+
+            for(auto[i,j] : spatialCoors[index].second)
+            {
+                for(int index2 = 0; index2  < spatialHash[i][j].size(); index2 ++)
+                {
+                    indecies.push_back(spatialHash[i][j][index2]);
+                }
+            }
+
+            spatialVector[index] = indecies;
+        }
+
+
+        void encodeCoors(double X, double Y, int index, int swing_low, int swing_high){
+            int n = int(X * (dHash - 0.01));
+            int m = int(Y * (dHash - 0.01));
+
+            auto[xHash,yHash] = spatialCoors[index].first;
             
+            if(n != xHash or m != yHash){
+                makeCoorsVector(n, m, index, swing_low, swing_high);
+            }     
+        }
+
+        void makeCoorsVector(int n, int m, int index, int swing_low, int swing_high)
+        {
+            std::vector<std::pair<int,int>> indecies;
             for(int mod_i = (n-swing_low) ; mod_i <= (n+swing_high) ; mod_i++)
             {
                 for(int mod_j = (m-swing_low) ; mod_j <= (m+swing_high) ; mod_j++)
                 {
-                    for(int index = 0; index < spatialHash[mod(mod_i,dHash)][mod(mod_j,dHash)].size(); index++)
-                    {
-                        indecies.push_back(spatialHash[mod(mod_i,dHash)][mod(mod_j,dHash)][index]);
-                    }
+                    indecies.push_back(std::make_pair(mod(mod_i,dHash),mod(mod_j,dHash)));
                 }
             }
-                
-            #pragma omp critical
-            {
-                spatialVector.push_back(std::make_pair(index,indecies));
-                spatialHash[n][m].push_back(index);
-            }
-        }
 
+            // make new spatial cors
+            spatialCoors[index] = std::make_pair(std::make_pair(n,m),indecies);
+        }
 
         std::vector<double> positions_X;
         std::vector<double> positions_Y;
@@ -319,9 +372,16 @@ class ParticleSystem
         std::vector<std::vector<double>> flavours;
 
         std::vector<std::vector<std::vector<int>>> spatialHash;
-        std::vector<std::pair<int,std::vector<int>>> spatialVector;
+        std::vector<std::vector<int>> spatialVector;
+        
+        std::vector<
+            std::pair<
+                std::pair<int,int>,
+                std::vector<std::pair<int,int>>
+            >
+        > spatialCoors;
 
-        int dHash = 12;
+        int dHash = 10;
 
         double dt;
         double rMax;

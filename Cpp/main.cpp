@@ -17,9 +17,9 @@ int main(int argc, char* argv[])
     // double force, 
     // double friction,
     // double Beta)
-    double beta = 0.05;
-    double range = 0.2;
-    ParticleSystem system(10000,0.01,range,100,0.1,beta,flavourMatrix);
+    double beta = 0.01;
+    double range = 0.1;
+    ParticleSystem system(1000,0.01,range,100,0.01,beta,flavourMatrix);
     // system.create_pool(poolSize);
     int width  = 1000;
     int height = 1000;
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
             float x = (X[n])*width;
             float y = (Y[n])*height;
             Vector2 center = {.x = x, .y = y};
-            DrawCircleGradient(x,y,2,Fade(cflavours[flavour[n]],1),Fade(cflavours[flavour[n]],1));
+            DrawCircleGradient(x,y,2,Fade(cflavours[flavour[n]],1),Fade(cflavours[flavour[n]],0.5));
 
             // #define DEBUG
             #ifdef DEBUG
