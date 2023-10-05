@@ -61,8 +61,7 @@ std::pair<int,int> getSwing(float rMax,float dHash)
         swing_high -= ceil(diff/2);
         swing_low  -= floor(diff/2);
     }
-
-    return std::make_pair(1,1);
+    return std::make_pair(swing_low,swing_high);
 }
 
 template<typename T> 
@@ -184,12 +183,13 @@ class ParticleSystem
                     std::vector<int>()
             ));
 
+            auto[swing_low,swing_high] = getSwing(rMax, dHash);
             for(int n = 0 ; n < positions_X.size(); n++){
                 shifted_X[n] = (positions_X[n] + 0.5);
                 shifted_Y[n] = (positions_Y[n] + 0.5);
+                encode(shifted_X[n],shifted_Y[n],n,swing_low,swing_high);
             };
 
-            auto[swing_low,swing_high] = getSwing(rMax, dHash);
             for(int i = 0 ; i < size ; i++){
 
                 int n = int(shifted_X[i] * (dHash - 0.01));
@@ -207,11 +207,6 @@ class ParticleSystem
                 spatialCoors.push_back(std::make_pair(std::make_pair(n,m),indecies));
             }
 
-            for(int n = 0 ; n < positions_X.size(); n++){
-                encode(shifted_X[n],shifted_Y[n],n,swing_low,swing_high);
-            };
-
-
             this->flavours = self_flauvoring(flavour,flavourMatrix);
         }
 
@@ -225,7 +220,7 @@ class ParticleSystem
             // better to have computation in bigger chunks for parallelism than divided per function
             auto[swing_low,swing_high] = getSwing(rMax, dHash);
 
-            #pragma omp parallel for      
+            // #pragma omp parallel for      
             for(int first = 0 ; first < spatialVector.size() ; first++)
             {
                 double f1,f2,r,distX1,distX2,distY1,distY2;
@@ -241,6 +236,7 @@ class ParticleSystem
 
                     r = sqrt(pow(distX1,2) + pow(distY1,2)) + 0.0000000000000001;
                     
+                    std::cout << "first: " << first << "r/rMax: " << r/rMax << std::endl;
                     f1 = -1.0*F(r/rMax,flavours[first][second],Beta);
 
                     forces_X[first] += f1 * (distX1)/r * force * rMax;
@@ -248,6 +244,7 @@ class ParticleSystem
                 }
             }
 
+            std::cout << "========================================================================" << std::endl;
             for(int n = 0 ; n < spatialHash.size() ; n++){
                 for(int m = 0 ; m < spatialHash[n].size() ; m++){
                     spatialHash[n][m].erase(spatialHash[n][m].begin(),spatialHash[n][m].end());  
@@ -279,7 +276,7 @@ class ParticleSystem
                 {
                     // you need to push shifted as there are from 0 to 1 
                     encode(shifted_X[n],shifted_Y[n],n,swing_high,swing_low);
-                    // encodeCoors(shifted_X[n],shifted_Y[n],n,swing_low,swing_high);
+                    encodeCoors(shifted_X[n],shifted_Y[n],n,swing_low,swing_high);
                 }
             }
 

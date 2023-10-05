@@ -18,8 +18,8 @@ int main(int argc, char* argv[])
     // double friction,
     // double Beta)
     double beta = 0.01;
-    double range = 0.1;
-    ParticleSystem system(1000,0.01,range,100,0.01,beta,flavourMatrix);
+    double range = 1.0;
+    ParticleSystem system(2,0.1,range,100,0.01,beta,flavourMatrix);
     // system.create_pool(poolSize);
     int width  = 1000;
     int height = 1000;
@@ -32,14 +32,16 @@ int main(int argc, char* argv[])
     // auto [X, Y] = system.step();
 
     auto flavour = system.getFlavour();
+
+    system.step();
+    system.step();
+    auto [X, Y] = system.step();
     //--------------------------------------------------------------------------------------
     while (!WindowShouldClose())
     {
         // sleep(1);
         BeginDrawing();
         ClearBackground(BLACK);
-
-        auto [X, Y] = system.step();
         
         for(int n = 0 ; n < X.size() ; n++)
         {
@@ -48,7 +50,7 @@ int main(int argc, char* argv[])
             Vector2 center = {.x = x, .y = y};
             DrawCircleGradient(x,y,2,Fade(cflavours[flavour[n]],1),Fade(cflavours[flavour[n]],0.5));
 
-            // #define DEBUG
+            #define DEBUG
             #ifdef DEBUG
             DrawCircleGradient(x,y,width*beta,Fade(BLUE,0),Fade(GREEN,0.2));
             DrawRing(center,width*range,width*range-1,0, 360, 0,Fade(RED,1));
