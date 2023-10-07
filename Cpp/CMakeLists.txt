@@ -8,6 +8,13 @@ FetchContent_Declare(raylib
 )
 FetchContent_MakeAvailable(raylib)
 
+OPTION(DEBUG "For enabling debug output" OFF) # Enabled by default
+
+IF(DEBUG)
+    ADD_DEFINITIONS(-DDEBUG)
+ENDIF(DEBUG)
+
+
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/particleLib)
 
 add_executable(myproject

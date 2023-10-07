@@ -12,6 +12,10 @@
 #include <cassert>
 #include <iso646.h>
 #include <omp.h>
+#include <functional>
+#include <chrono>
+#include <iostream>
+using namespace std::chrono;
 
 #define NULL_AVOID 0.00000001
 
@@ -35,6 +39,15 @@ Beta
 ***/
 
 using particles = std::pair<std::vector<double>,std::vector<double>>;
+
+void timeit(std::function<void(void)> fn)
+{
+    auto start = high_resolution_clock::now();
+    fn();
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(stop - start);
+    std::cout << duration.count() << "ms" << std::endl;
+};
 
 inline double lim(double val , double lim)
 {
@@ -289,6 +302,79 @@ class ParticleSystem
             return std::make_pair(shifted_X, shifted_Y);
         }
 
+        #ifdef EXPERIMENTAL
+
+        void set_rMax(double rMax){
+            this->rMax = rMax;
+            calcSpatialAttention();
+        };
+
+        void set_dt(double dt){
+            this->dt = dt;
+        };
+        void set_force(double force){
+            this->force = force;
+        }; 
+        void set_friction(double friction){
+            this->friction = friction;
+        };
+        void set_Beta(double Beta){
+            this->Beta = Beta;
+        };
+        void set_Matrix(std::vector<std::vector<double>> flavourMatrix){
+            this->flavourMatrix = flavourMatrix;
+        };
+
+        bool add_particles(std::vector<double> positions_X,std::vector<double> positions_Y){
+            if(positions_X.size() == positions_Y.size())
+            {
+                auto size = positions_X.size();
+                this->positions_X.insert(this->positions_X.end(),positions_X.begin(),positions_X.end());
+                this->positions_Y.insert(this->positions_Y.end(),positions_Y.begin(),positions_Y.end());
+
+                shifted_X.resize(shifted_X.size() + size, 0.0);
+                shifted_Y.resize(shifted_Y.size() + size, 0.0);
+
+                forces_X.resize(forces_X.size() + size, 0.0);
+                forces_Y.resize(forces_Y.size() + size, 0.0);
+
+                velocities_X.resize(velocities_X.size() + size, 0.0);
+                velocities_Y.resize(velocities_Y.size() + size, 0.0);
+
+                flavour = get_random_vector<int>(this->positions_X.size(),0,flavourMatrix.size()-1);
+                spatialVector = std::vector<std::vector<int>>(this->positions_X.size(),std::vector<int>());
+
+                auto[swing_low,swing_high] = getSwing(rMax, dHash);
+                for(int n = 0 ; n < this->positions_X.size(); n++){
+                    shifted_X[n] = (this->positions_X[n] + 0.5);
+                    shifted_Y[n] = (this->positions_Y[n] + 0.5);
+                    encode(shifted_X[n],shifted_Y[n],n,swing_low,swing_high);
+                };
+
+                for(int i = 0 ; i < this->positions_X.size() ; i++){
+
+                    int n = int(shifted_X[i] * (dHash - 0.01));
+                    int m = int(shifted_Y[i] * (dHash - 0.01));
+                    std::vector<std::pair<int,int>> indecies;
+                    
+                    for(int mod_i = (n-swing_low) ; mod_i <= (n+swing_high) ; mod_i++)
+                    {
+                        for(int mod_j = (m-swing_low) ; mod_j <= (m+swing_high) ; mod_j++)
+                        {
+                            indecies.push_back(std::make_pair(mod(mod_i,dHash),mod(mod_j,dHash)));
+                        }
+                    }
+                    // make new spatial cors
+                    spatialCoors.push_back(std::make_pair(std::make_pair(n,m),indecies));
+                }
+
+                this->flavours = self_flauvoring(flavour,flavourMatrix);
+                return true;
+            }
+            return false
+        };
+
+        #endif
     private:
 
         // self correlation for particle flavours 
@@ -340,8 +426,9 @@ class ParticleSystem
         {
             int n = int(X * (dHash - 0.01));
             int m = int(Y * (dHash - 0.01));
-            std::vector<int> indecies;
 
+            std::vector<int> indecies;
+            
             for(auto[i,j] : spatialCoors[index].second)
             {
                 indecies.insert(indecies.end(),spatialHash[i][j].begin(),spatialHash[i][j].end());

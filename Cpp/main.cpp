@@ -36,15 +36,9 @@ int main(int argc, char* argv[])
     };
     #endif
 
-    // ParticleSystem(unsigned int size, 
-    // double dt, 
-    // double rMax, 
-    // double force, 
-    // double friction,
-    // double Beta)
-    double beta = 0.07;
-    double range = 0.15;
-    ParticleSystem system(10000,0.01,range,50,0.1,beta,flavourMatrix);
+    double beta = 0.01;
+    double range = 0.05;
+    ParticleSystem system(6000,0.1,range,50,0.0025,beta,flavourMatrix);
     // system.create_pool(poolSize);
     int width  = 800;
     int height = 800;
@@ -54,12 +48,8 @@ int main(int argc, char* argv[])
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
     std::cout << "ParticleUniverse generated" << std::endl;
-    // auto [X, Y] = system.step();
-
     auto flavour = system.getFlavour();
 
-    // system.step();
-    // system.step();
     //--------------------------------------------------------------------------------------
     while (!WindowShouldClose())
     {
