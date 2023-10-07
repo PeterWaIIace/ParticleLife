@@ -1,8 +1,46 @@
 #include "raylib.h"
 #include "raymath.h"
 #include <unistd.h>
+#include <ctime>
+#include <iomanip>
+#include <iostream>
+#include <chrono>
+#include <filesystem>
 
 #include <ParticleSystem.hpp>
+
+// for format
+#include <fmt/core.h>
+using namespace fmt::literals;
+
+std::string time_now(){
+    // Get the current timepoint
+    auto currentTime = std::chrono::system_clock::now();
+
+    // Convert the timepoint to a time_t object
+    std::time_t currentTime_t = std::chrono::system_clock::to_time_t(currentTime);
+
+    // Convert the time_t object to a string
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&currentTime_t), "%Y-%m-%d %H:%M:%S");
+
+    // Get the string representation of the current timestamp
+    return ss.str();
+}
+
+namespace fs = std::filesystem;
+void mkdir(std::string directoryPath)
+{
+    // Check if the directory already exists
+    if (!fs::exists(directoryPath)) {
+        // Create the directory
+        fs::create_directory(directoryPath);
+        std::cout << fmt::format("Directory {} created successfully.",directoryPath)<< std::endl;
+    } else {
+        std::cout << fmt::format("Directory {} already exists successfully.",directoryPath) << std::endl;
+    }
+
+}
 
 Color cflavours[6] = {BLUE,RED,GREEN,PINK,YELLOW,PURPLE};
 int main(int argc, char* argv[])
@@ -37,7 +75,7 @@ int main(int argc, char* argv[])
     #endif
 
     double beta = 0.01;
-    double range = 0.05;
+    double range = 0.1;
     ParticleSystem system(6000,0.1,range,50,0.0025,beta,flavourMatrix);
     // system.create_pool(poolSize);
     int width  = 800;
@@ -50,6 +88,10 @@ int main(int argc, char* argv[])
     std::cout << "ParticleUniverse generated" << std::endl;
     auto flavour = system.getFlavour();
 
+    #ifdef RECORD
+    std::string recording_name = time_now();
+    mkdir(fmt::format("./recordings/{}",recording_name));
+    #endif
     //--------------------------------------------------------------------------------------
     while (!WindowShouldClose())
     {
@@ -65,13 +107,17 @@ int main(int argc, char* argv[])
             Vector2 center = {.x = x, .y = y};
             DrawCircleGradient(x,y,1,Fade(cflavours[flavour[n]],1),Fade(cflavours[flavour[n]],0.2));
 
-            // #define DEBUG
+
             #ifdef DEBUG
             DrawCircleGradient(x,y,width*beta,Fade(BLUE,0),Fade(GREEN,0.2));
             DrawRing(center,width*range,width*range-1,0, 360, 0,Fade(RED,1));
             #endif
             // DrawCircleGradient(x,y,10,Fade(allColors[particle.color],0.2),Fade(allColors[particle.color],0.0));
         }
+
+        #ifdef RECORD
+        TakeScreenshot(fmt::format("/recordings/{}/{}.png",recording_name,time_now()).c_str());
+        #endif
 
         EndDrawing();
     }

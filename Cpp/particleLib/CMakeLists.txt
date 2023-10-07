@@ -3,7 +3,7 @@ project(particleLib)
 
 find_package(OpenMP)
 # GoogleTest requires at least C++14
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_DEBUG "-O3")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
