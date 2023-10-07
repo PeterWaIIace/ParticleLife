@@ -13,9 +13,9 @@ Some prelimiary results - still not optimal:
 
 # How to:
 
-You can compile version C++:
+You can compile and run version C++:
 ```
-cd Cpp\build ; cmake .. ; cmake --build . ; .\Debug\myproject.exe
+./build.sh
 ```
 
 Python is currently WiP:
