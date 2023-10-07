@@ -116,20 +116,23 @@ template<typename T> std::vector<T> get_zero_vector(unsigned int size)
 
 inline double F(double distance , double relation, double b)
 {
-    return relation * (1 - fabs(2.0 * distance - 1.0 - b)/(1 - b)) * (double)(b < distance and distance < 1.0) + (distance/b - 1)* (double)(distance <= b and distance > NULL_AVOID);
+    return relation * (1 - fabs(2.0 * distance - 1.0 - b)/(1 - b)) * (double)(b < distance and distance < 1.0) + \
+     (distance/b - 1)* (double)(distance <= b and distance > NULL_AVOID);
 }
 
-void showVector(std::vector<double> vec){
+template<typename T> 
+void showVector(std::vector<T> vec){
     // Print elements of the 1D vector
     std::cout << "1D Vector Elements: ";
     for (int i = 0; i < vec.size(); ++i) {
-        std::cout << "[" << i << "]=" << vec[i] << " ";
+        std::cout << "" << vec[i] << ", ";
     }
     std::cout << std::endl;
 };
 
 
-void showMatrix(std::vector<std::vector<double>> matrix){
+template<typename T> 
+void showMatrix(std::vector<std::vector<T>> matrix){
     // Print elements of the 2D vector
     std::cout << "2D Vector Elements:" << std::endl;
     for (int i = 0; i < matrix.size(); ++i) {
@@ -160,6 +163,8 @@ class ParticleSystem
             this->friction = friction;
 
             this->parameter = (force * rMax) * friction;
+
+            calcSpatialAttention();
 
             positions_X = get_random_vector<double>(size,-0.5,0.5);
             positions_Y = get_random_vector<double>(size,-0.5,0.5);
@@ -220,31 +225,30 @@ class ParticleSystem
             // better to have computation in bigger chunks for parallelism than divided per function
             auto[swing_low,swing_high] = getSwing(rMax, dHash);
 
-            // #pragma omp parallel for      
+            #pragma omp parallel for  
             for(int first = 0 ; first < spatialVector.size() ; first++)
             {
                 double f1,f2,r,distX1,distX2,distY1,distY2;
                 for(auto second : spatialVector[first])
                 {
-                    if(first == second)
+                    if(first != second)[[likely]]
                     {
-                        break;
+                        distX1 = lim(positions_X[first] - positions_X[second],1.0);
+                        distY1 = lim(positions_Y[first] - positions_Y[second],1.0);
+
+                        r = sqrt(pow(distX1,2) + pow(distY1,2)) + 0.0000000000000001;
+                        
+                        f1 = -1.0*F(r/rMax,flavours[first][second],Beta);
+
+                        // first != second - branchless check if frist is diff second, if it is equal then entire euqation is zeroed
+                        forces_X[first] += f1 * (distX1)/r * force * rMax;
+                        forces_Y[first] += f1 * (distY1)/r * force * rMax;
                     }
-
-                    distX1 = lim(positions_X[first] - positions_X[second],1.0);
-                    distY1 = lim(positions_Y[first] - positions_Y[second],1.0);
-
-                    r = sqrt(pow(distX1,2) + pow(distY1,2)) + 0.0000000000000001;
                     
-                    std::cout << "first: " << first << "r/rMax: " << r/rMax << std::endl;
-                    f1 = -1.0*F(r/rMax,flavours[first][second],Beta);
-
-                    forces_X[first] += f1 * (distX1)/r * force * rMax;
-                    forces_Y[first] += f1 * (distY1)/r * force * rMax;
                 }
             }
 
-            std::cout << "========================================================================" << std::endl;
+            #pragma omp parallel for
             for(int n = 0 ; n < spatialHash.size() ; n++){
                 for(int m = 0 ; m < spatialHash[n].size() ; m++){
                     spatialHash[n][m].erase(spatialHash[n][m].begin(),spatialHash[n][m].end());  
@@ -272,18 +276,14 @@ class ParticleSystem
                 shifted_X[n] = (positions_X[n] + 0.5);
                 shifted_Y[n] = (positions_Y[n] + 0.5);
 
-                #pragma omp critical
-                {
-                    // you need to push shifted as there are from 0 to 1 
-                    encode(shifted_X[n],shifted_Y[n],n,swing_high,swing_low);
-                    encodeCoors(shifted_X[n],shifted_Y[n],n,swing_low,swing_high);
-                }
+                encode(shifted_X[n],shifted_Y[n],n,swing_high,swing_low);
+                encodeCoors(shifted_X[n],shifted_Y[n],n,swing_low,swing_high);
             }
 
-            auto[lowSwing,highSwing] = getSwing(rMax,dHash);
+            #pragma omp parallel for
             for(int n = 0 ; n < shifted_X.size(); n++)
             {
-                getSpatialVector(shifted_X[n],shifted_Y[n],n,lowSwing,highSwing);
+                getSpatialVector(shifted_X[n],shifted_Y[n],n,swing_low,swing_high);
             }
 
             return std::make_pair(shifted_X, shifted_Y);
@@ -292,7 +292,7 @@ class ParticleSystem
     private:
 
         // self correlation for particle flavours 
-        std::vector<std::vector<double>> self_flauvoring(std::vector<int> flavour, std::vector<std::vector<double>> matrix)
+        std::vector<std::vector<double>> self_flauvoring(std::vector<int> flavour, std::vector<std::vector<double>> matrix) // that function is called only on init
         {
             auto flavours = std::vector<std::vector<double>>(flavour.size(),std::vector<double>(flavour.size(),0.0));
             for(int n = 0 ; n < flavour.size() ; n++)
@@ -305,10 +305,34 @@ class ParticleSystem
             return flavours;
         }
 
+        void calcSpatialAttention() 
+        {
+            if(spatialAtention.size()) spatialAtention.erase(spatialAtention.begin(),spatialAtention.end());
+
+            auto[swing_low,swing_high] = getSwing(rMax,dHash);
+            for(int n = 0 ; n < dHash; n++){    
+                spatialAtention.push_back(std::vector<std::vector<std::pair<int,int>>>());
+
+                for(int m = 0 ; m < dHash; m++){     
+                    std::vector<std::pair<int,int>> indecies;
+                    for(int mod_i = (n-swing_low) ; mod_i <= (n+swing_high) ; mod_i++)
+                    {
+                        for(int mod_j = (m-swing_low) ; mod_j <= (m+swing_high) ; mod_j++)
+                        {
+                            indecies.push_back(std::make_pair(mod(mod_i,dHash),mod(mod_j,dHash)));
+                        }
+                    }
+                    spatialAtention[n].push_back(indecies);         
+                }
+            }
+        }
+
+
         void encode(double X, double Y, int index, int swing_low,int swing_high){    
             int n = int(X * (dHash - 0.01));
             int m = int(Y * (dHash - 0.01));
 
+            #pragma omp critical
             spatialHash[n][m].push_back(index);
         }
 
@@ -320,10 +344,7 @@ class ParticleSystem
 
             for(auto[i,j] : spatialCoors[index].second)
             {
-                for(int index2 = 0; index2  < spatialHash[i][j].size(); index2 ++)
-                {
-                    indecies.push_back(spatialHash[i][j][index2]);
-                }
+                indecies.insert(indecies.end(),spatialHash[i][j].begin(),spatialHash[i][j].end());
             }
 
             spatialVector[index] = indecies;
@@ -336,24 +357,11 @@ class ParticleSystem
 
             auto[xHash,yHash] = spatialCoors[index].first;
             
-            if(n != xHash or m != yHash){
-                makeCoorsVector(n, m, index, swing_low, swing_high);
-            }     
-        }
-
-        void makeCoorsVector(int n, int m, int index, int swing_low, int swing_high)
-        {
-            std::vector<std::pair<int,int>> indecies;
-            for(int mod_i = (n-swing_low) ; mod_i <= (n+swing_high) ; mod_i++)
+            if(n != xHash or m != yHash) [[unlikely]]
             {
-                for(int mod_j = (m-swing_low) ; mod_j <= (m+swing_high) ; mod_j++)
-                {
-                    indecies.push_back(std::make_pair(mod(mod_i,dHash),mod(mod_j,dHash)));
-                }
-            }
-
-            // make new spatial cors
-            spatialCoors[index] = std::make_pair(std::make_pair(n,m),indecies);
+                #pragma omp critical
+                spatialCoors[index] = std::make_pair(std::make_pair(n,m),spatialAtention[n][m]);
+            }     
         }
 
         std::vector<double> positions_X;
@@ -370,6 +378,13 @@ class ParticleSystem
 
         std::vector<std::vector<std::vector<int>>> spatialHash;
         std::vector<std::vector<int>> spatialVector;
+        std::vector<
+            std::vector<
+                std::vector<
+                    std::pair<int,int>
+                >
+            >
+        > spatialAtention;
         
         std::vector<
             std::pair<
@@ -378,7 +393,7 @@ class ParticleSystem
             >
         > spatialCoors;
 
-        int dHash = 10;
+        int dHash = 35;
 
         double dt;
         double rMax;

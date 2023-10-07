@@ -7,9 +7,34 @@
 Color cflavours[6] = {BLUE,RED,GREEN,PINK,YELLOW,PURPLE};
 int main(int argc, char* argv[])
 {
+    #define RANDOM
+    #ifdef RANDOM
+    std::random_device rd; // Seed for the random number generator
+    std::mt19937 gen(rd()); // Standard Mersenne Twister engine
+    std::uniform_real_distribution<double> dis(-1.0, 1.0); // Distribution for random double values between 0.0 and 1.0
+
+    int rows = 4; // Number of rows in the 2D vector
+    int cols = rows; // Number of columns in each row
+
+    std::vector<std::vector<double>> flavourMatrix(rows, std::vector<double>(cols));
+
+    // Fill the vector with random double values
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            flavourMatrix[i][j] = dis(gen);
+        }
+    }
+    #endif
+
+    // #define RANDOM
+    #ifdef MANUAL
     std::vector<std::vector<double>> flavourMatrix = {
-        {1.0},
+        {1.0 ,-0.1,0.3,-0.1},
+        {-1.0,0.1,-1.0,0.1},
+        {1.0 ,0.4,-1.0,0.4},
+        {-1.0,0.1,-1.0,0.1},
     };
+    #endif
 
     // ParticleSystem(unsigned int size, 
     // double dt, 
@@ -17,12 +42,12 @@ int main(int argc, char* argv[])
     // double force, 
     // double friction,
     // double Beta)
-    double beta = 0.01;
-    double range = 1.0;
-    ParticleSystem system(2,0.1,range,100,0.01,beta,flavourMatrix);
+    double beta = 0.05;
+    double range = 0.1;
+    ParticleSystem system(10000,0.01,range,50,0.1,beta,flavourMatrix);
     // system.create_pool(poolSize);
-    int width  = 1000;
-    int height = 1000;
+    int width  = 800;
+    int height = 800;
 
     InitWindow(width, height, "raylib [core] example - basic window");
 
@@ -33,9 +58,8 @@ int main(int argc, char* argv[])
 
     auto flavour = system.getFlavour();
 
-    system.step();
-    system.step();
-    auto [X, Y] = system.step();
+    // system.step();
+    // system.step();
     //--------------------------------------------------------------------------------------
     while (!WindowShouldClose())
     {
@@ -43,14 +67,15 @@ int main(int argc, char* argv[])
         BeginDrawing();
         ClearBackground(BLACK);
         
+        auto [X, Y] = system.step();
         for(int n = 0 ; n < X.size() ; n++)
         {
             float x = (X[n])*width;
             float y = (Y[n])*height;
             Vector2 center = {.x = x, .y = y};
-            DrawCircleGradient(x,y,2,Fade(cflavours[flavour[n]],1),Fade(cflavours[flavour[n]],0.5));
+            DrawCircleGradient(x,y,1,Fade(cflavours[flavour[n]],1),Fade(cflavours[flavour[n]],0.2));
 
-            #define DEBUG
+            // #define DEBUG
             #ifdef DEBUG
             DrawCircleGradient(x,y,width*beta,Fade(BLUE,0),Fade(GREEN,0.2));
             DrawRing(center,width*range,width*range-1,0, 360, 0,Fade(RED,1));
