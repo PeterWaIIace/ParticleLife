@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
     std::mt19937 gen(rd()); // Standard Mersenne Twister engine
     std::uniform_real_distribution<double> dis(-1.0, 1.0); // Distribution for random double values between 0.0 and 1.0
 
-    int rows = 4; // Number of rows in the 2D vector
+    int rows = 6; // Number of rows in the 2D vector
     int cols = rows; // Number of columns in each row
 
     std::vector<std::vector<double>> flavourMatrix(rows, std::vector<double>(cols));
@@ -42,8 +42,8 @@ int main(int argc, char* argv[])
     // double force, 
     // double friction,
     // double Beta)
-    double beta = 0.05;
-    double range = 0.1;
+    double beta = 0.07;
+    double range = 0.15;
     ParticleSystem system(10000,0.01,range,50,0.1,beta,flavourMatrix);
     // system.create_pool(poolSize);
     int width  = 800;
