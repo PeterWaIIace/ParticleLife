@@ -143,19 +143,6 @@ void showVector(std::vector<T> vec){
     std::cout << std::endl;
 };
 
-
-template<typename T> 
-void showMatrix(std::vector<std::vector<T>> matrix){
-    // Print elements of the 2D vector
-    std::cout << "2D Vector Elements:" << std::endl;
-    for (int i = 0; i < matrix.size(); ++i) {
-        for (int j = 0; j < matrix[i].size(); ++j) {
-            std::cout <<  matrix[i][j] << " ";
-        }
-        std::cout << std::endl;
-    }
-};
-
 class ParticleSystem
 {
     public:

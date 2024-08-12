@@ -1,6 +1,7 @@
 import cv2
 import os
 import sys
+import tqdm
 
 if __name__=="__main__":
 
@@ -31,7 +32,7 @@ if __name__=="__main__":
     video = cv2.VideoWriter(output_video, fourcc, 30, (width, height))
 
     # Iterate through PNG files and add them to the video
-    for png_file in png_files:
+    for png_file in tqdm.tqdm(png_files):
         image_path = os.path.join(input_directory, png_file)
         frame = cv2.imread(image_path)
         video.write(frame)

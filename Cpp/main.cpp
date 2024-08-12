@@ -13,6 +13,18 @@
 #include <fmt/core.h>
 using namespace fmt::literals;
 
+template<typename T> 
+void showMatrix(std::vector<std::vector<T>> matrix){
+    // Print elements of the 2D vector
+    std::cout << "2D Vector Elements:" << std::endl;
+    for (int i = 0; i < matrix.size(); ++i) {
+        for (int j = 0; j < matrix[i].size(); ++j) {
+            std::cout <<  matrix[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+};
+
 std::string time_now(){
     // Get the current timepoint
     auto currentTime = std::chrono::system_clock::now();
@@ -42,7 +54,7 @@ void mkdir(std::string directoryPath)
 
 }
 
-Color cflavours[6] = {BLUE,RED,GREEN,PINK,YELLOW,PURPLE};
+Color cflavours[] = {BLUE,RED,GREEN,PINK,YELLOW,PURPLE,ORANGE,VIOLET};
 int main(int argc, char* argv[])
 {
     #define RANDOM
@@ -51,7 +63,7 @@ int main(int argc, char* argv[])
     std::mt19937 gen(rd()); // Standard Mersenne Twister engine
     std::uniform_real_distribution<double> dis(-1.0, 1.0); // Distribution for random double values between 0.0 and 1.0
 
-    int rows = 6; // Number of rows in the 2D vector
+    int rows = 8; // Number of rows in the 2D vector
     int cols = rows; // Number of columns in each row
 
     std::vector<std::vector<double>> flavourMatrix(rows, std::vector<double>(cols));
@@ -62,6 +74,8 @@ int main(int argc, char* argv[])
             flavourMatrix[i][j] = dis(gen);
         }
     }
+    
+    showMatrix(flavourMatrix);
     #endif
 
     // #define RANDOM
@@ -74,12 +88,12 @@ int main(int argc, char* argv[])
     };
     #endif
 
-    double beta = 0.01;
-    double range = 0.1;
-    ParticleSystem system(6000,0.1,range,50,0.0025,beta,flavourMatrix);
+    double beta = 0.05;
+    double range = 0.2;
+    ParticleSystem system(5000,0.05,range,2,0.02,beta,flavourMatrix);
     // system.create_pool(poolSize);
-    int width  = 800;
-    int height = 800;
+    int width  = 1200;
+    int height = 1200;
 
     InitWindow(width, height, "raylib [core] example - basic window");
 
@@ -91,6 +105,7 @@ int main(int argc, char* argv[])
     #ifdef RECORD
     std::string recording_name = time_now();
     mkdir(fmt::format("./recordings/{}",recording_name));
+    int frame_counter = 0;
     #endif
     //--------------------------------------------------------------------------------------
     while (!WindowShouldClose())
@@ -104,11 +119,11 @@ int main(int argc, char* argv[])
         {
             float x = (X[n])*width;
             float y = (Y[n])*height;
-            Vector2 center = {.x = x, .y = y};
-            DrawCircleGradient(x,y,1,Fade(cflavours[flavour[n]],1),Fade(cflavours[flavour[n]],0.2));
+            DrawCircleGradient(x,y,3,Fade(cflavours[flavour[n]],1),Fade(cflavours[flavour[n]],0.2));
 
 
             #ifdef DEBUG
+            Vector2 center = {.x = x, .y = y};
             DrawCircleGradient(x,y,width*beta,Fade(BLUE,0),Fade(GREEN,0.2));
             DrawRing(center,width*range,width*range-1,0, 360, 0,Fade(RED,1));
             #endif
@@ -116,6 +131,8 @@ int main(int argc, char* argv[])
         }
 
         #ifdef RECORD
+        frame_counter++;
+        std::cout << fmt::format("recorded {} frames.",frame_counter) << std::endl;
         TakeScreenshot(fmt::format("/recordings/{}/{}.png",recording_name,time_now()).c_str());
         #endif
 
